@@ -156,6 +156,8 @@ def _doctor() -> None:
           f"{'OK' if config.COMFY_WORKFLOW.exists() else 'MISSING'}")
     print(f"  native render: {settings.get('width')}x{settings.get('height')}  "
           f"steps={settings.get('steps')}  cfg={settings.get('cfg')}")
+    print(f"  ComfyUI server: expected at {config.COMFY_URL} — "
+          f"{'running' if comfy.is_up() else 'NOT running (start it before `kc images`)'}")
     print(f"ComfyUI dir:   {config.COMFY_DIR}  {'OK' if config.COMFY_DIR.exists() else 'MISSING'}")
     gguf = config.COMFY_DIR / "models" / "diffusion_models" / "flux-2-klein-4b-Q4_K_M.gguf"
     print(f"FLUX.2-klein:  {gguf}  {'OK' if gguf.exists() else 'MISSING (run scripts/fetch_models.py)'}")

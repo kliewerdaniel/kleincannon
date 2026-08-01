@@ -49,19 +49,31 @@ def run(episode_id: str, fast: bool = False, force: bool = False,
 
         s = seed if seed is not None else 1000 + i * 137
         print(f"  {beat.id}  rendering (seed {s}) …")
-        try:
-            comfy.generate(
-                positive=beat.image_prompt,
-                negative=NEG,
-                seed=s,
-                dest=dest,
-                workflow=workflow,
-                width=w,
-                height=h,
-            )
-        except SystemExit as e:
-            # Surface a friendly note about the missing-LoRA situation if relevant.
-            raise
+        # ComfyUI is run by the user (COMFY_AUTO_LAUNCH=False): one long-lived
+        # server on :8188, never relaunched between beats (relaunching poisons the
+        # Apple-Silicon MPS pool and makes FLUX.2-klein crash at step 0). We just
+        # queue the job and wait for the save node's file to land on disk. If a
+        # connection drops we retry against the SAME server rather than killing it.
+        max_attempts = 4
+        for attempt in range(1, max_attempts + 1):
+            if not comfy.is_up():
+                comfy.ensure_server()
+            try:
+                comfy.generate(
+                    positive=beat.image_prompt,
+                    negative=NEG,
+                    seed=s,
+                    dest=dest,
+                    workflow=workflow,
+                    width=w,
+                    height=h,
+                )
+            except (comfy.ComfyServerDied, SystemExit) as e:
+                print(f"    attempt {attempt} failed ({e}); retrying on same server")
+            if dest.exists() and dest.stat().st_size > 0:
+                break
+        if not (dest.exists() and dest.stat().st_size > 0):
+            raise SystemExit(f"image stage failed for {beat.id} after {max_attempts} attempts")
         beat.image = f"images/{beat.id}.png"
         print(f"  {beat.id}  -> {dest.name}")
 

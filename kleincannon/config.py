@@ -39,9 +39,17 @@ DEFAULT_VOICE = "chris"            # resolves voices/chris.wav + voices/chris.tx
 COMFY_DIR = PROJECTS / "image" / "ComfyUI"
 COMFY_URL = "http://127.0.0.1:8188"
 COMFY_OUTPUT = COMFY_DIR / "output"
-COMFY_WORKFLOW = WORKFLOWS / "klein.json"   # committed in-repo
-# ComfyUI auto-launch config (used by comfy.ensure_server):
+COMFY_WORKFLOW = WORKFLOWS / "klein.json"   # committed in-repo (FLUX.2-klein)
+# ComfyUI is expected to be RUN BY YOU on http://127.0.0.1:8188 before `kc images`.
+# klein poisons the Apple-Silicon MPS pool when the agent relaunches the server
+# between beats, so we do NOT auto-launch or kill it — we just connect. Flip
+# COMFY_AUTO_LAUNCH to True if you'd rather the agent launch it (with --lowvram).
+COMFY_AUTO_LAUNCH = False
 COMFY_PYTHON = COMFY_DIR / "main.py"
+COMFY_LAUNCH_ARGS: list[str] = ["--lowvram"]   # used only when COMFY_AUTO_LAUNCH=True
+# ComfyUI runs under its own venv (has comfy_aimdo / alembic / torch). Use that
+# interpreter rather than the system python, which lacks ComfyUI's deps.
+COMFY_VENV_PYTHON = PROJECTS / "image" / "venv" / "bin" / "python3"
 
 # --- Video ---
 FFMPEG = "/opt/homebrew/bin/ffmpeg"
@@ -51,12 +59,13 @@ WIDTH, HEIGHT, FPS = 1080, 1920, 30
 # ComfyUI's FLUX.2-klein latent is typically 1024x1024; we crop to 1080 at
 # assembly. Keep these in sync with the klein workflow's native EmptyLatent size
 # (comfy.workflow_settings() reads the real value from the file for `kc doctor`).
-GEN_WIDTH, GEN_HEIGHT = 1024, 1024
+# Native render size of the working klein graph (vertical 9:16, as you exported it).
+GEN_WIDTH, GEN_HEIGHT = 1080, 1920
 
 # Fast/test render profile — low-res + fewer steps so a full end-to-end run
 # finishes in minutes instead of per-frame latency. `kc images --fast` uses it;
 # assembly reads the real rendered size so it cuts together correctly.
-FAST_GEN_WIDTH, FAST_GEN_HEIGHT = 512, 512
+FAST_GEN_WIDTH, FAST_GEN_HEIGHT = 540, 960   # 9:16 low-res test profile
 FAST_STEPS = 4
 
 TAIL_SECONDS = 1.2      # silence after last word before video ends

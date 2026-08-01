@@ -99,26 +99,31 @@ def _speech_cli(clip: Path, transcript: Path, text: str, out: Path,
 
 
 def _f5_python(clip: Path, transcript: Path, text: str, out: Path) -> None:
-    """Fallback: use the pip `f5-tts` package in-process (Apache-2.0)."""
+    """Fallback: use the pip `f5-tts` package in-process (Apache-2.0).
+
+    Values are inlined into the generated runner script (json-encoded) so the
+    child process never depends on argv parsing.
+    """
+    import json
+
     ref_text = transcript.read_text().strip()
     runner = (
         "import soundfile as sf\n"
         "from f5_tts.api import F5TTS\n"
-        "tts = F5TTS(vocoder_name='vocos', model='F5TTS_v1_Base')\n"
+        "tts = F5TTS(model='F5TTS_v1_Base')\n"
         "wav, sr, _ = tts.infer(\n"
-        "    ref_audio=REF_AUDIO,\n"
-        "    ref_text=REF_TEXT,\n"
-        "    gen_text=GEN_TEXT,\n"
+        f"    ref_file={json.dumps(str(clip))},\n"
+        f"    ref_text={json.dumps(ref_text)},\n"
+        f"    gen_text={json.dumps(text)},\n"
         "    seed=42,\n"
         ")\n"
-        "sf.write(OUT, wav, sr)\n"
+        f"sf.write({json.dumps(str(out))}, wav, sr)\n"
     )
     tmp = out.with_suffix(".run.py")
     tmp.write_text(runner)
     env = {k: v for k, v in os.environ.items() if k not in ("PYTHONPATH", "PYTHONHOME")}
     subprocess.run(
-        [sys.executable, str(tmp), "--REFAUDIO", str(clip), "--REF_TEXT", ref_text,
-         "--GEN_TEXT", text, "--OUT", str(out)],
+        [sys.executable, str(tmp)],
         check=True, capture_output=True, text=True, env=env,
     )
     tmp.unlink(missing_ok=True)

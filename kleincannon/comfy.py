@@ -36,6 +36,23 @@ N_LORA = "Lora Loader (LoraManager)"
 
 
 # ---------------------------------------------------------------- workflow
+def _looks_like_api_graph(obj: object) -> bool:
+    """True if `obj` is already an API-format prompt graph.
+
+    API graphs are dicts mapping node-id -> {"class_type": str, "inputs": {...}}.
+    UI (litegraph) files instead have top-level keys like "nodes"/"links".
+    """
+    if not isinstance(obj, dict):
+        return False
+    if "nodes" in obj or "links" in obj:
+        return False
+    # Every value should look like an API node.
+    return all(
+        isinstance(v, dict) and "class_type" in v and "inputs" in v
+        for v in obj.values()
+    )
+
+
 def ui_to_api(ui: dict) -> dict:
     """Convert a saved litegraph UI workflow into the /prompt API graph."""
     link_src = {}
@@ -75,15 +92,53 @@ def ui_to_api(ui: dict) -> dict:
 
 
 def load_workflow(path: Path | None = None) -> dict:
+    """Load the klein workflow as an API-format prompt graph.
+
+    If the file is already an API-format graph (dict of node-id -> {class_type,
+    inputs}), it is used directly. This is the preferred form: the committed
+    klein.json is the exact graph that is known to render on this machine, so we
+    avoid the lossy UI->API conversion that mis-assigns widget values (e.g.
+    EmptyFlux2LatentImage batch_size). UI-format litegraph files are converted
+    via ui_to_api() as a fallback.
+    """
     path = path or config.COMFY_WORKFLOW
-    return ui_to_api(json.loads(path.read_text()))
+    raw = json.loads(path.read_text())
+    if _looks_like_api_graph(raw):
+        return raw
+    return ui_to_api(raw)
 
 
 def workflow_settings(path: Path | None = None) -> dict:
-    """Read the workflow's native render settings straight from the UI file."""
-    ui = json.loads((path or config.COMFY_WORKFLOW).read_text())
+    """Read the workflow's native render settings.
+
+    Handles both API-format graphs (committed klein.json) and UI litegraph files:
+    dims come from the EmptyFlux2LatentImage inputs (or the PrimitiveInt width/
+    height nodes), steps from Flux2Scheduler, cfg from CFGGuider.
+    """
+    raw = json.loads((path or config.COMFY_WORKFLOW).read_text())
+    if isinstance(raw, dict) and "nodes" not in raw and "links" not in raw:
+        # API-format graph
+        width = height = steps = cfg = None
+        for n in raw.values():
+            ct = n.get("class_type")
+            if ct == "EmptyFlux2LatentImage":
+                width, height = n["inputs"].get("width"), n["inputs"].get("height")
+            elif ct == "Flux2Scheduler":
+                steps = n["inputs"].get("steps")
+            elif ct == "CFGGuider":
+                cfg = n["inputs"].get("cfg")
+        if width is None:  # fall back to PrimitiveInt width/height nodes
+            for n in raw.values():
+                if n.get("class_type") == "PrimitiveInt" and "value" in n.get("inputs", {}):
+                    v = n["inputs"]["value"]
+                    if width is None:
+                        width = v
+                    else:
+                        height = v
+        return {"steps": steps, "cfg": cfg, "width": width, "height": height}
+    # UI-format litegraph
     out: dict = {k: None for k in ("steps", "cfg", "width", "height")}
-    for node in ui.get("nodes", []):
+    for node in raw.get("nodes", []):
         if node.get("type") == "Flux2Scheduler":
             wv = node.get("widgets_values") or []
             if len(wv) >= 1:
@@ -132,24 +187,23 @@ def build_prompt(api: dict, positive: str, negative: str, seed: int,
     if noise:
         graph[noise[0]]["inputs"]["noise_seed"] = seed
 
-    # width/height — two PrimitiveInt nodes feed the latent + scheduler.
-    # We set ALL PrimitiveInt widgets that are currently the workflow's dims.
+    # width/height — the working klein graph sets these via two PrimitiveInt
+    # nodes (width=1080, height=1920) whose values feed the latent and
+    # scheduler through links. We set the PrimitiveInt inputs["value"] so
+    # the linked nodes pick up the requested dims; we also force-set the
+    # literal nodes (EmptyFlux2LatentImage / Flux2Scheduler) for good measure.
     if width is not None and height is not None:
         prims = _by_type(graph, N_PRIMITIVE)
         for nid in prims:
-            wv = graph[nid].get("widgets_values") or []
-            # PrimitiveInt wv = [value, control]; set value if it looks like a dim
-            if wv and isinstance(wv[0], int):
-                # width appears once, height once in the original; match by value
-                if wv[0] == config.GEN_WIDTH and width != config.GEN_WIDTH:
-                    wv[0] = width
-                elif wv[0] == config.GEN_HEIGHT and height != config.GEN_HEIGHT:
-                    wv[0] = height
-                elif wv[0] not in (config.GEN_WIDTH, config.GEN_HEIGHT):
-                    # already a non-default dim from a custom workflow; leave it
+            cur = graph[nid].get("inputs", {}).get("value")
+            if isinstance(cur, int):
+                if cur == config.GEN_WIDTH:
+                    graph[nid]["inputs"]["value"] = width
+                elif cur == config.GEN_HEIGHT:
+                    graph[nid]["inputs"]["value"] = height
+                elif cur not in (config.GEN_WIDTH, config.GEN_HEIGHT):
+                    # already a non-default size from a custom workflow; leave it
                     pass
-                graph[nid]["widgets_values"] = wv
-        # also force-set literal nodes if present
         for nid in _by_type(graph, N_LATENT):
             graph[nid]["inputs"]["width"] = width
             graph[nid]["inputs"]["height"] = height
@@ -160,16 +214,67 @@ def build_prompt(api: dict, positive: str, negative: str, seed: int,
     # Bypass the Lora Loader if present (user reported the LoRA is not needed and
     # its file may be absent). mode=4 == bypass in litegraph.
     for nid in _by_type(graph, N_LORA):
-        # api graph has no 'mode'; ComfyUI skips bypassed nodes only in UI format.
-        # We instead rewire the CFGGuider/CLIP to the upstream model by removing
-        # the lora node's effect: easiest is to leave it — if the LoRA file is
-        # missing, ComfyUI errors. So we DROP the lora node and reconnect its
-        # inputs' source directly. The klein Lora Loader has a single model+clip
-        # input (link 180 model, 182 clip). We reconnect those targets to the
-        # UnetLoaderGGUF / CLIPLoader outputs instead.
         _drop_lora(graph, nid)
 
+    # Static workflow uses stale model filenames / a custom save node whose
+    # widget-only inputs ui_to_api() can't see. Reconcile both with the live
+    # ComfyUI server.
+    _fix_model_names(graph)
+    _patch_save_nodes(graph, seed)
+    _drop_memory_cleanup(graph)
+
     return graph
+
+
+def _fix_model_names(graph: dict) -> None:
+    """Remap the static workflow's model filenames to what the live ComfyUI
+    server actually has on disk (strips the 'FLUX.2/' subdir prefix the saved
+    UI workflow used, and downgrades the unet from Q8 to the present Q4)."""
+    remap = {
+        "unet_name": {
+            "FLUX.2/flux-2-klein-4b-Q8_0.gguf": "flux-2-klein-4b-Q4_K_M.gguf",
+        },
+        "clip_name": {
+            "FLUX.2/qwen_3_4b.safetensors": "qwen_3_4b.safetensors",
+        },
+        "vae_name": {
+            "FLUX.2/flux2-vae.safetensors": "flux2-vae.safetensors",
+        },
+    }
+    for node in graph.values():
+        for field, table in remap.items():
+            val = node["inputs"].get(field)
+            if isinstance(val, str) and val in table:
+                node["inputs"][field] = table[val]
+
+
+def _patch_save_nodes(graph: dict, seed: int) -> None:
+    """The custom 'Image Saver Simple' node exposes its settings as widget-only
+    inputs that ui_to_api() drops. Re-inject the required inputs from the live
+    /object_info schema so ComfyUI validation passes and writes a named file."""
+    for node in graph.values():
+        if node["class_type"] != "Image Saver Simple":
+            continue
+        node["inputs"].update({
+            "filename": f"klein_{seed}",
+            "path": "",
+            "extension": "png",
+            "lossless_webp": False,
+            "quality_jpeg_or_webp": 95,
+            "optimize_png": True,
+            "embed_workflow": False,
+            "save_workflow_as_json": False,
+        })
+
+
+def _drop_memory_cleanup(graph: dict) -> None:
+    """Remove orphaned VRAM/RAM cleanup nodes (comfyui_memory_cleanup custom
+    nodes). Their widget-only inputs are dropped by ui_to_api(), ComfyUI
+    rejects the graph, and they feed nothing in the generation chain — so
+    dropping them is safe and makes the klein graph server-valid."""
+    for nid in [k for k, v in graph.items()
+                if v["class_type"] in ("RAMCleanup", "VRAMCleanup")]:
+        graph.pop(nid, None)
 
 
 def _drop_lora(graph: dict, lora_id: str) -> None:
@@ -195,6 +300,10 @@ def _drop_lora(graph: dict, lora_id: str) -> None:
 
 
 # ---------------------------------------------------------------- server
+# Tracked server process so we can tear it down and relaunch between beats.
+_SERVER_PROC: subprocess.Popen | None = None
+
+
 def is_up() -> bool:
     try:
         urllib.request.urlopen(config.COMFY_URL + "/system_stats", timeout=3)
@@ -203,29 +312,73 @@ def is_up() -> bool:
         return False
 
 
-def ensure_server(wait: int = 300) -> subprocess.Popen | None:
-    """Start ComfyUI from config.COMFY_DIR if it isn't already running.
+def kill_server() -> None:
+    """Hard-stop a ComfyUI process we launched ourselves (COMFY_AUTO_LAUNCH).
 
-    Returns the Popen if we started it, None if we reused an existing server.
+    When COMFY_AUTO_LAUNCH is False the server is run by the user on :8188 and we
+    must never kill it — relaunching between beats is what poisons the
+    Apple-Silicon MPS pool and makes FLUX.2-klein crash at sampler step 0. In
+    that mode this is a no-op so the user's long-lived server survives.
     """
+    global _SERVER_PROC
+    if not getattr(config, "COMFY_AUTO_LAUNCH", False):
+        _SERVER_PROC = None
+        return
+    if _SERVER_PROC is not None and _SERVER_PROC.poll() is None:
+        _SERVER_PROC.terminate()
+        try:
+            _SERVER_PROC.wait(timeout=20)
+        except Exception:
+            _SERVER_PROC.kill()
+    _SERVER_PROC = None
+    # Belt-and-suspenders: any stray listener on the port (only ours).
+    try:
+        subprocess.run(["pkill", "-f", "main.py --listen"],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception:
+        pass
+    # Wait for the port to free up.
+    for _ in range(30):
+        if not is_up():
+            break
+        time.sleep(1)
+
+
+def ensure_server(wait: int = 300) -> subprocess.Popen | None:
+    """Verify a ComfyUI is reachable on COMFY_URL.
+
+    The server is expected to be RUN BY THE USER on :8188 (COMFY_AUTO_LAUNCH is
+    False). In that mode we never launch one ourselves — we just confirm it's up
+    and error clearly if it isn't, so the user knows to start it. (If you set
+    COMFY_AUTO_LAUNCH=True the agent will launch it with COMFY_LAUNCH_ARGS.)
+    """
+    global _SERVER_PROC
     if is_up():
         print("[comfy] reusing running ComfyUI")
         return None
+    if not getattr(config, "COMFY_AUTO_LAUNCH", False):
+        raise SystemExit(
+            f"ComfyUI is not running at {config.COMFY_URL}. Start it yourself "
+            f"(e.g. from the image/ venv) and re-run. Set COMFY_AUTO_LAUNCH=True "
+            f"in config.py to have the agent launch it."
+        )
     if not config.COMFY_PYTHON.exists():
         raise SystemExit(f"ComfyUI not found at {config.COMFY_PYTHON}")
 
-    python = "/opt/homebrew/bin/python3"
+    python = str(config.COMFY_VENV_PYTHON)
     # CRITICAL: strip PYTHONPATH/PYTHONHOME so the agent venv (py3.11) doesn't
     # leak numpy/torch into ComfyUI's py3.14 process.
     env = {k: v for k, v in os.environ.items() if k not in ("PYTHONPATH", "PYTHONHOME")}
     print(f"[comfy] launching ComfyUI ({config.COMFY_URL}) …")
     proc = subprocess.Popen(
-        [python, str(config.COMFY_PYTHON), "--listen", "127.0.0.1", "--port", "8188"],
+        [python, str(config.COMFY_PYTHON), "--listen", "127.0.0.1", "--port", "8188",
+         *getattr(config, "COMFY_LAUNCH_ARGS", [])],
         cwd=str(config.COMFY_DIR),
         env=env,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
+    _SERVER_PROC = proc
     deadline = time.time() + wait
     while time.time() < deadline:
         if is_up():
@@ -236,6 +389,19 @@ def ensure_server(wait: int = 300) -> subprocess.Popen | None:
         time.sleep(2)
     proc.terminate()
     raise SystemExit("ComfyUI did not come up in time")
+
+
+def restart_server(wait: int = 300) -> None:
+    """Tear down + start a clean ComfyUI between beats (auto-launch mode only).
+
+    When COMFY_AUTO_LAUNCH is False the server is the user's long-lived process;
+    relaunching it is exactly what poisons the MPS pool, so this is a no-op and
+    the same server handles every beat.
+    """
+    if not getattr(config, "COMFY_AUTO_LAUNCH", False):
+        return
+    kill_server()
+    ensure_server(wait=wait)
 
 
 def queue(graph: dict) -> str:
@@ -252,20 +418,68 @@ def queue(graph: dict) -> str:
         raise SystemExit(f"ComfyUI rejected the graph:\n{e.read().decode()[:1500]}")
 
 
-def wait(prompt_id: str, timeout: int = 5400, poll: float = 2.0) -> dict:
+class ComfyServerDied(Exception):
+    """Raised when ComfyUI drops the connection mid-generation (klein MPS crash).
+
+    Callers should restart the server and retry — the saved image file may
+    already be on disk even though /history is unreachable.
+    """
+
+
+def _out_file(seed: int) -> Path:
+    # "Image Saver Simple" writes filename=f"klein_{seed}" extension="png"
+    return config.COMFY_OUTPUT / f"klein_{seed}.png"
+
+
+def wait(prompt_id: str, seed: int, dest: Path, timeout: int = 900,
+         poll: float = 2.0) -> bool:
+    """Poll /history for completion, but also watch the output folder.
+
+    FLUX.2-klein can crash the server at/after the sampler step. The save node
+    writes its file to disk before or during that crash, so we treat the
+    presence of the output file as success even if the server then dies.
+
+    Returns True on success (dest copied). Raises ComfyServerDied if the
+    connection drops before the file appears; the caller restarts + retries.
+    """
     deadline = time.time() + timeout
     while time.time() < deadline:
-        with urllib.request.urlopen(
-            f"{config.COMFY_URL}/history/{prompt_id}", timeout=15
-        ) as r:
-            hist = json.loads(r.read())
-        if prompt_id in hist:
-            entry = hist[prompt_id]
-            status = entry.get("status", {})
-            if status.get("status_str") == "error":
-                raise SystemExit(f"ComfyUI job failed: {json.dumps(status)[:800]}")
-            if status.get("completed") or entry.get("outputs"):
-                return entry
+        # The file on disk is the source of truth — it survives a server crash.
+        out = _out_file(seed)
+        if out.exists() and out.stat().st_size > 0:
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(out, dest)
+            return True
+        # Server still alive? probe /history.
+        try:
+            with urllib.request.urlopen(
+                f"{config.COMFY_URL}/history/{prompt_id}", timeout=15
+            ) as r:
+                hist = json.loads(r.read())
+            if prompt_id in hist:
+                entry = hist[prompt_id]
+                status = entry.get("status", {})
+                if status.get("status_str") == "error":
+                    raise SystemExit(
+                        f"ComfyUI job failed: {json.dumps(status)[:800]}"
+                    )
+                if status.get("completed") or entry.get("outputs"):
+                    out = _out_file(seed)
+                    if out.exists() and out.stat().st_size > 0:
+                        dest.parent.mkdir(parents=True, exist_ok=True)
+                        shutil.copy2(out, dest)
+                        return True
+        except (urllib.error.URLError, ConnectionError, TimeoutError,
+                http_client_exception()) as e:
+            # Connection dropped. If the file is already on disk, still a win.
+            out = _out_file(seed)
+            if out.exists() and out.stat().st_size > 0:
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(out, dest)
+                return True
+            raise ComfyServerDied(
+                f"ComfyUI connection lost during generation: {e}"
+            ) from e
         time.sleep(poll)
     raise SystemExit(f"ComfyUI job {prompt_id} timed out")
 
@@ -294,10 +508,30 @@ def fetch_images(entry: dict, dest: Path) -> list[Path]:
     raise SystemExit("ComfyUI returned no images")
 
 
+def http_client_exception():
+    """Return the http.client exception type for except-clauses at runtime."""
+    import http.client
+    return http.client.HTTPException
+
+
 def generate(positive: str, negative: str, seed: int, dest: Path,
              workflow: dict | None = None,
              width: int | None = None, height: int | None = None) -> Path:
+    """Queue one generation. On a server crash, copy whatever file landed and
+    return; the caller (images.run) restarts the server and retries until the
+    destination exists."""
     graph = build_prompt(workflow or load_workflow(), positive, negative, seed,
                           width=width, height=height)
-    entry = wait(queue(graph))
-    return fetch_images(entry, dest)[0]
+    pid = queue(graph)
+    try:
+        wait(pid, seed, dest)
+    except ComfyServerDied:
+        # The save node may have written the file before the crash.
+        out = _out_file(seed)
+        if out.exists() and out.stat().st_size > 0 and not dest.exists():
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(out, dest)
+        # Propagate so images.run knows to restart + retry if dest missing.
+        if not dest.exists():
+            raise
+    return dest
