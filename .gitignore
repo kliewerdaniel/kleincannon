@@ -1,0 +1,36 @@
+# virtual env
+venv/
+.venv/
+
+# model weights + downloaded reference assets
+models/
+*.gguf
+*.safetensors
+*.bin
+
+# episode media (the rendered outputs are large; keep only manifests)
+episodes/*/images/
+episodes/*/audio/
+episodes/*/captions/
+episodes/*/*.mp4
+episodes/*/*.wav
+!episodes/.gitkeep
+
+# reference voice CLIPS (keep transcripts/placeholder)
+voices/*.wav
+voices/*.mp3
+voices/*.flac
+voices/*.ogg
+!voices/README.md
+
+# python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# env / secrets
+.env
+*.log
+
+# OS
+.DS_Store
