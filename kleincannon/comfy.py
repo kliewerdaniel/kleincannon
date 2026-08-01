@@ -251,13 +251,31 @@ def _fix_model_names(graph: dict) -> None:
 def _patch_save_nodes(graph: dict, seed: int) -> None:
     """The custom 'Image Saver Simple' node exposes its settings as widget-only
     inputs that ui_to_api() drops. Re-inject the required inputs from the live
-    /object_info schema so ComfyUI validation passes and writes a named file."""
+    /object_info schema so ComfyUI validation passes and writes a named file.
+
+    We route each render into a size-specific subfolder (e.g. "1080x1920") so a
+    re-run at a different resolution writes a NON-colliding filename. Without
+    this, ComfyUI's execution cache serves the previous run's file (same seed +
+    same graph hash) and a native re-render silently returns the old low-res
+    image — which is exactly why `--force` produced stale 528x960 frames.
+    """
+    dims = "render"
+    try:
+        for node in graph.values():
+            if node["class_type"] == "EmptyFlux2LatentImage":
+                w = node["inputs"].get("width")
+                h = node["inputs"].get("height")
+                if w and h:
+                    dims = f"{w}x{h}"
+                break
+    except Exception:
+        pass
     for node in graph.values():
         if node["class_type"] != "Image Saver Simple":
             continue
         node["inputs"].update({
             "filename": f"klein_{seed}",
-            "path": "",
+            "path": dims,          # subfolder = render resolution
             "extension": "png",
             "lossless_webp": False,
             "quality_jpeg_or_webp": 95,
@@ -426,9 +444,25 @@ class ComfyServerDied(Exception):
     """
 
 
-def _out_file(seed: int) -> Path:
-    # "Image Saver Simple" writes filename=f"klein_{seed}" extension="png"
-    return config.COMFY_OUTPUT / f"klein_{seed}.png"
+def _save_subfolder(graph: dict | None, seed: int) -> str:
+    """Read the save node's subfolder ('path') from the graph, or discover the
+    real file via /history on crash. Falls back to a size-named guess."""
+    if graph:
+        for node in graph.values():
+            if node["class_type"] == "Image Saver Simple":
+                p = node["inputs"].get("path")
+                if isinstance(p, str) and p:
+                    return p
+    return "render"
+
+
+def _out_file(seed: int, subfolder: str = "") -> Path:
+    # "Image Saver Simple" writes filename=f"klein_{seed}" extension="png".
+    # ComfyUI appends a _NNNN counter on collision, so glob for the newest
+    # klein_{seed}*.png under the render subfolder.
+    base = config.COMFY_OUTPUT / subfolder if subfolder else config.COMFY_OUTPUT
+    matches = sorted(base.glob(f"klein_{seed}*.png"), key=lambda p: p.stat().st_mtime)
+    return matches[-1] if matches else base / f"klein_{seed}.png"
 
 
 def wait(prompt_id: str, seed: int, dest: Path, timeout: int = 900,
@@ -443,9 +477,10 @@ def wait(prompt_id: str, seed: int, dest: Path, timeout: int = 900,
     connection drops before the file appears; the caller restarts + retries.
     """
     deadline = time.time() + timeout
+    sub = _save_subfolder(None, seed)
     while time.time() < deadline:
         # The file on disk is the source of truth — it survives a server crash.
-        out = _out_file(seed)
+        out = _out_file(seed, sub)
         if out.exists() and out.stat().st_size > 0:
             dest.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(out, dest)
@@ -464,15 +499,13 @@ def wait(prompt_id: str, seed: int, dest: Path, timeout: int = 900,
                         f"ComfyUI job failed: {json.dumps(status)[:800]}"
                     )
                 if status.get("completed") or entry.get("outputs"):
-                    out = _out_file(seed)
-                    if out.exists() and out.stat().st_size > 0:
-                        dest.parent.mkdir(parents=True, exist_ok=True)
-                        shutil.copy2(out, dest)
+                    saved = fetch_images(entry, dest)
+                    if saved:
                         return True
         except (urllib.error.URLError, ConnectionError, TimeoutError,
                 http_client_exception()) as e:
             # Connection dropped. If the file is already on disk, still a win.
-            out = _out_file(seed)
+            out = _out_file(seed, sub)
             if out.exists() and out.stat().st_size > 0:
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(out, dest)
@@ -522,12 +555,13 @@ def generate(positive: str, negative: str, seed: int, dest: Path,
     destination exists."""
     graph = build_prompt(workflow or load_workflow(), positive, negative, seed,
                           width=width, height=height)
+    sub = _save_subfolder(graph, seed)
     pid = queue(graph)
     try:
         wait(pid, seed, dest)
     except ComfyServerDied:
         # The save node may have written the file before the crash.
-        out = _out_file(seed)
+        out = _out_file(seed, sub)
         if out.exists() and out.stat().st_size > 0 and not dest.exists():
             dest.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(out, dest)

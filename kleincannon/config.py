@@ -71,10 +71,13 @@ FAST_STEPS = 4
 TAIL_SECONDS = 1.2      # silence after last word before video ends
 
 # --- Caption styling (karaoke burn-in). Overridable from web UI / CLI. ---
-CAPTION_FONT_MAX_FRAC = 0.075   # largest caption font as a fraction of frame height
-CAPTION_FONT_MIN_FRAC = 0.030   # floor so very long lines stay readable
-CAPTION_WIDTH_BUDGET = 0.86     # caption block may use this fraction of frame width
-CAPTION_BLOCK_MAX_FRAC = 0.34    # caption block may use this fraction of frame height
+# 3-word cards: keep the font well under a quarter of frame width so it reads
+# as an accent, not a billboard. ~4-5% of frame height is the sweet spot for
+# 1080-wide verticals (was 7.5% = 144px, which dominated the screen).
+CAPTION_FONT_MAX_FRAC = 0.045   # largest caption font as a fraction of frame height
+CAPTION_FONT_MIN_FRAC = 0.024   # floor so very long lines stay readable
+CAPTION_WIDTH_BUDGET = 0.80     # caption block may use this fraction of frame width
+CAPTION_BLOCK_MAX_FRAC = 0.30    # caption block may use this fraction of frame height
 CAPTION_TOP_FRAC = 0.80         # vertical center of the caption block (lower third)
 CAPTION_ACCENT = (0, 229, 255, 255)    # spoken-word colour (cyan)
 CAPTION_WHITE = (255, 255, 255, 255)   # upcoming-word colour (white)
