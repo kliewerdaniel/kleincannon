@@ -92,29 +92,32 @@ def _build_command(ep: Episode) -> list[str]:
     vcat = "".join(f"[v{i}]" for i, b in enumerate(ep.beats) if b.image)
     filters.append(f"{vcat}concat=n={len(img_inputs)}:v=1:a=0[vcat]")
 
-    # Caption overlay (per word), if captions were generated.
+    # Caption overlay — single caption-layer video (one transparent PNG per
+    # frame, karaoke-highlighted), composited with ONE overlay filter. This
+    # avoids ffmpeg's silent truncation of long sequential overlay chains.
     cap_json = ep.dir / "captions" / "words.json"
-    if cap_json.exists():
+    frames_dir = ep.dir / "captions" / "frames"
+    if cap_json.exists() and frames_dir.exists():
         meta = json.loads(cap_json.read_text())
-        words = meta["words"]
-        # add each caption PNG as an input AFTER the images and audio
-        cap_start = len(img_inputs) + (1 if voice and voice.exists() else 0)
-        for wd in words:
-            cmd += ["-i", wd["png"]]
-        chain = "[vcat]"
-        for j, wd in enumerate(words):
-            label = f"cap{j}"
-            enable = f"between(t,{wd['start']:.3f},{wd['end']:.3f})"
-            x = wd.get("x", 0)
-            y = wd.get("y", 0)
-            chain += (
-                f"[{label}]overlay=format=auto:enable='{enable}':"
-                f"x={x}:y={y}"
-            )
-            if j < len(words) - 1:
-                chain += f"[o{j}];[o{j}]"
-        chain += "[vout]"
-        filters.append(chain)
+        n_frames = meta["n_frames"]
+        fps = meta.get("fps", config.FPS)
+        # Build the caption-layer video from the frame PNGs (glob order is
+        # frame_00000.png .. frame_NNNNN.png).
+        cap_vid = ep.dir / "captions" / "caption_layer.mp4"
+        fr = str(frames_dir / "frame_%05d.png")
+        cl = [
+            config.FFMPEG, "-y", "-hide_banner",
+            "-framerate", str(fps), "-start_number", "0",
+            "-i", fr,
+            "-frames:v", str(n_frames),
+            "-c:v", "png",  # lossless, keep alpha
+            str(cap_vid),
+        ]
+        subprocess.run(cl, capture_output=True, text=True, check=True)
+        cmd += ["-i", str(cap_vid)]
+        # one overlay of the full-frame transparent layer over the concat
+        cap_label = f"{len(img_inputs) + (1 if voice and voice.exists() else 0)}:v"
+        filters.append(f"[vcat][{cap_label}]overlay=format=auto[vout]")
     else:
         filters.append("[vcat]null[vout]")
 

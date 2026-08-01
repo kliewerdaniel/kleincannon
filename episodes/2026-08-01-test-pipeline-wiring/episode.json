@@ -1,0 +1,167 @@
+{
+  "id": "2026-08-01-test-pipeline-wiring",
+  "topic": "test pipeline wiring",
+  "hook": "",
+  "purpose": "validation",
+  "beats": [
+    {
+      "id": "b01",
+      "text": "A single transposed number just lost you the deal.",
+      "image_prompt": null,
+      "image": "images/b01.png",
+      "audio_start": 0.0,
+      "audio_end": 2.0,
+      "motion": "in"
+    },
+    {
+      "id": "b02",
+      "text": "You typed a nine where the eight should be.",
+      "image_prompt": null,
+      "image": "images/b02.png",
+      "audio_start": 2.0,
+      "audio_end": 4.0,
+      "motion": "in"
+    },
+    {
+      "id": "b03",
+      "text": "That quarter-million swing killed the cap rate.",
+      "image_prompt": null,
+      "image": "images/b03.png",
+      "audio_start": 4.0,
+      "audio_end": 6.0,
+      "motion": "in"
+    }
+  ],
+  "voice": "chris",
+  "style_suffix": "",
+  "cta": "",
+  "voice_audio": "audio/voice.wav",
+  "words": [
+    {
+      "word": "A",
+      "start": 0.0,
+      "end": 0.2222222222222222
+    },
+    {
+      "word": "single",
+      "start": 0.2222222222222222,
+      "end": 0.4444444444444444
+    },
+    {
+      "word": "transposed",
+      "start": 0.4444444444444444,
+      "end": 0.6666666666666666
+    },
+    {
+      "word": "number",
+      "start": 0.6666666666666666,
+      "end": 0.8888888888888888
+    },
+    {
+      "word": "just",
+      "start": 0.8888888888888888,
+      "end": 1.1111111111111112
+    },
+    {
+      "word": "lost",
+      "start": 1.1111111111111112,
+      "end": 1.3333333333333333
+    },
+    {
+      "word": "you",
+      "start": 1.3333333333333333,
+      "end": 1.5555555555555554
+    },
+    {
+      "word": "the",
+      "start": 1.5555555555555554,
+      "end": 1.7777777777777777
+    },
+    {
+      "word": "deal.",
+      "start": 1.7777777777777777,
+      "end": 2.0
+    },
+    {
+      "word": "You",
+      "start": 2.0,
+      "end": 2.2222222222222223
+    },
+    {
+      "word": "typed",
+      "start": 2.2222222222222223,
+      "end": 2.4444444444444446
+    },
+    {
+      "word": "a",
+      "start": 2.4444444444444446,
+      "end": 2.6666666666666665
+    },
+    {
+      "word": "nine",
+      "start": 2.6666666666666665,
+      "end": 2.888888888888889
+    },
+    {
+      "word": "where",
+      "start": 2.888888888888889,
+      "end": 3.111111111111111
+    },
+    {
+      "word": "the",
+      "start": 3.111111111111111,
+      "end": 3.333333333333333
+    },
+    {
+      "word": "eight",
+      "start": 3.333333333333333,
+      "end": 3.5555555555555554
+    },
+    {
+      "word": "should",
+      "start": 3.5555555555555554,
+      "end": 3.7777777777777777
+    },
+    {
+      "word": "be.",
+      "start": 3.7777777777777777,
+      "end": 4.0
+    },
+    {
+      "word": "That",
+      "start": 4.0,
+      "end": 4.285714285714286
+    },
+    {
+      "word": "quarter-million",
+      "start": 4.285714285714286,
+      "end": 4.571428571428571
+    },
+    {
+      "word": "swing",
+      "start": 4.571428571428571,
+      "end": 4.857142857142857
+    },
+    {
+      "word": "killed",
+      "start": 4.857142857142857,
+      "end": 5.142857142857142
+    },
+    {
+      "word": "the",
+      "start": 5.142857142857142,
+      "end": 5.428571428571429
+    },
+    {
+      "word": "cap",
+      "start": 5.428571428571429,
+      "end": 5.714285714285714
+    },
+    {
+      "word": "rate.",
+      "start": 5.714285714285714,
+      "end": 6.0
+    }
+  ],
+  "final": "2026-08-01-test-pipeline-wiring.mp4"
+}

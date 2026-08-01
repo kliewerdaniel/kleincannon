@@ -82,7 +82,47 @@ def _chunks(text: str, max_chars: int = 180) -> list[str]:
     return [c for c in chunks if c.strip()]
 
 
-def _speech_cli(clip: Path, transcript: Path, text: str, out: Path,
+def _transcribe_ref(clip: Path) -> str:
+    """Transcribe the reference clip with faster-whisper so F5-TTS's ref_text
+    EXACTLY matches the audio.
+
+    A hand-written `voices/<name>.txt` that drifts from the clip makes F5-TTS
+    echo the mismatched words into EVERY generated line (the "rabbit leak"):
+    the model treats ref_text as a guide for prosody and bleeds words that were
+    never spoken. Deriving ref_text from the clip itself removes that entire
+    class of bug. Result is cached to a sidecar so we don't re-transcribe on
+    every TTS run.
+    """
+    cache = clip.with_name(clip.stem + ".reftext")
+    try:
+        if cache.exists() and cache.stat().st_mtime >= clip.stat().st_mtime:
+            return cache.read_text().strip()
+    except OSError:
+        pass
+    try:
+        from faster_whisper import WhisperModel
+    except Exception:
+        return ""  # whisper unavailable -> fall back to the .txt
+    model = WhisperModel("base", device="cpu", compute_type="int8")
+    segs, _ = model.transcribe(str(clip), beam_size=4)
+    text = " ".join(s.text for s in segs).strip()
+    try:
+        cache.write_text(text)
+    except OSError:
+        pass
+    return text
+
+
+def _ref_text(clip: Path, transcript: Path) -> str:
+    """ref_text = transcribed clip; fall back to the hand-written .txt only if
+    transcription is unavailable or empty."""
+    txt = _transcribe_ref(clip)
+    if txt:
+        return txt
+    return transcript.read_text().strip()
+
+
+def _speech_cli(clip: Path, ref_text: str, text: str, out: Path,
                 model_dir: Path) -> None:
     """Invoke the speech-swift CLI: speech speak ... --engine f5."""
     model_arg = ["--model", str(model_dir)] if model_dir.exists() else []
@@ -90,7 +130,7 @@ def _speech_cli(clip: Path, transcript: Path, text: str, out: Path,
         config.F5_BIN, "speak", text,
         "--engine", "f5",
         "--voice-sample", str(clip),
-        "--f5-reference-text", transcript.read_text().strip(),
+        "--f5-reference-text", ref_text,
         "-o", str(out),
         *model_arg,
     ]
@@ -98,7 +138,7 @@ def _speech_cli(clip: Path, transcript: Path, text: str, out: Path,
     subprocess.run(cmd, check=True, capture_output=True, text=True, env=env)
 
 
-def _f5_python(clip: Path, transcript: Path, text: str, out: Path) -> None:
+def _f5_python(clip: Path, ref_text: str, text: str, out: Path) -> None:
     """Fallback: use the pip `f5-tts` package in-process (Apache-2.0).
 
     Values are inlined into the generated runner script (json-encoded) so the
@@ -106,7 +146,6 @@ def _f5_python(clip: Path, transcript: Path, text: str, out: Path) -> None:
     """
     import json
 
-    ref_text = transcript.read_text().strip()
     runner = (
         "import soundfile as sf\n"
         "from f5_tts.api import F5TTS\n"
@@ -130,11 +169,12 @@ def _f5_python(clip: Path, transcript: Path, text: str, out: Path) -> None:
 
 
 def _synth(clip: Path, transcript: Path, text: str, out: Path, model_dir: Path) -> None:
+    ref_text = _ref_text(clip, transcript)
     if shutil.which(config.F5_BIN):
-        _speech_cli(clip, transcript, text, out, model_dir)
+        _speech_cli(clip, ref_text, text, out, model_dir)
     else:
         print(f"[tts] '{config.F5_BIN}' not on PATH — using f5-tts python fallback")
-        _f5_python(clip, transcript, text, out)
+        _f5_python(clip, ref_text, text, out)
 
 
 def run(episode_id: str, speed: float = 1.0, voice: str | None = None) -> Episode:

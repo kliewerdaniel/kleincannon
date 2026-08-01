@@ -21,6 +21,8 @@ voices/*.wav
 voices/*.mp3
 voices/*.flac
 voices/*.ogg
+# auto-transcribed ref_text cache sidecar (derived from the clip, regenerated)
+voices/*.reftext
 !voices/README.md
 
 # python
