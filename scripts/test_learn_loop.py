@@ -112,23 +112,27 @@ def part_a_learning_core(tmp: Path) -> None:
 
 
 def part_b_autonomous_loop(tmp: Path) -> None:
-    log("PART B: autonomous optimization loop (MockTikTok)")
+    log("PART B: autonomous optimization loop (manual-upload path)")
     _isolate(tmp / "b")
-    assert isinstance(plat.get_adapter(), plat.MockTikTok), "expected mock offline"
-
-    mock = plat.MockTikTok(seed=42)
-    plat.get_adapter = lambda *a, **k: mock
-
+    # default is manual_upload=True now; run_cycle writes a publish package
+    # instead of pushing to a platform. We simulate your manual upload + the
+    # agent reading metrics back via record_metrics().
     n_cycles = 14
     for i in range(n_cycles):
         out = agency.run_cycle(EPISODE, niche="ocean-science", caption="follow for part 2")
-        # simulate time passing so scheduled snapshots mature
-        store = db.open_db()
-        for e in store.list_experiences(only_posted=True):
-            if e.posted_at is not None:
-                store.update_experience(e.id, posted_at=e.posted_at - 25 * 3600)
-        store.close()
-        hv.harvest_all()
+        assert out["mode"] == "manual_upload", "expected manual_upload mode"
+        exp_id = out["experience_id"]
+        # simulate: you uploaded it, agent read views/likes from the account
+        fake = {"views": 1000 * (i + 1), "likes": 80 * (i + 1),
+                "comments": 10 * (i + 1), "shares": 5 * (i + 1),
+                "saves": 7 * (i + 1), "followers_gained": 3 * (i + 1),
+                "watch_time": 200 * (i + 1), "completion_rate": 0.6}
+        rec = agency.record_metrics(exp_id, fake)
+        assert rec["captured"] == 1, "snapshot not recorded"
+
+    # pending list should now be empty (all recorded = uploaded)
+    pend = agency.pending_packages()
+    log(f"  pending packages after recording: {len(pend)}")
 
     res = tr.train_from_history()
     log(f"  trained: {res.get('trained')}  dataset={res.get('dataset_size')}  "
@@ -144,13 +148,12 @@ def part_b_autonomous_loop(tmp: Path) -> None:
     assert spread > 1e-3, "bandit produces degenerate (constant) predictions"
 
     store = db.open_db()
-    posted = store.list_experiences(only_posted=True)
-    assert len(posted) >= n_cycles, "not all cycles produced posted experiences"
+    posted = store.list_experiences(only_status="uploaded")
+    assert len(posted) >= n_cycles, "not all cycles produced recorded experiences"
     first = posted[0]
     snaps = store.snapshots(first.id)
-    log(f"  posted={len(posted)}  first experience snapshots={len(snaps)}")
+    log(f"  recorded={len(posted)}  first experience snapshots={len(snaps)}")
     assert len(snaps) >= 1, "no immutable metric snapshots recorded"
-    # snapshots must be append-only & strictly increasing in t_offset
     offs = [s.t_offset for s in snaps]
     assert offs == sorted(offs), "snapshots not monotonically ordered"
     diag = e.diagnostics()

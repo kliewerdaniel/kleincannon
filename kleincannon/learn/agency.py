@@ -16,6 +16,7 @@ It never mutates the generation pipeline itself.
 """
 from __future__ import annotations
 
+import json
 import time
 from pathlib import Path
 from typing import Any
@@ -78,6 +79,151 @@ def prepare_candidates(episode_id: str, *, parent_id: str | None = None,
     return candidates
 
 
+# ---------------------------------------------------------------------------
+# Selection + publish-package emission (manual-upload path)
+# ---------------------------------------------------------------------------
+def select_and_package(episode_id: str, candidates: list[dict[str, Any]],
+                       *, mp4: str | Path | None = None,
+                       privacy: str | None = None,
+                       niche: str = "") -> dict[str, Any]:
+    """Choose the best candidate via the learning engine and emit a publish
+    package you upload by hand.
+
+    Returns the package dict and (as a side effect) writes it to
+    <learn_dir>/pending/<experience_id>.json with the mp4 copied alongside, so
+    the CLI/web can show 'what to upload next' and you never lose it.
+    """
+    engine = eng.get_engine()
+    chosen, mean, std = engine.best(candidates)
+    chosen = dict(chosen)
+
+    mp4 = Path(mp4) if mp4 else (Episode.load(episode_id).dir / f"{episode_id}.mp4")
+    if not mp4.exists():
+        raise FileNotFoundError(f"no mp4 at {mp4}")
+
+    chosen = metadata.embed_posting_time(dict(chosen), time.time())
+    chosen["privacy"] = privacy or learn_config.default_privacy
+    chosen["title"] = chosen.get("title") or Episode.load(episode_id).topic
+
+    # persist the chosen candidate as a CHOSEN-but-not-posted experience
+    store = db.open_db()
+    exp = None
+    for cand_exp in store.get_by_episode(episode_id):
+        if cand_exp.generation_params.get("_candidate_id") == chosen.get("_candidate_id"):
+            exp = cand_exp
+            break
+    if exp is None:
+        exp = db.Experience(id="", episode_id=episode_id,
+                            platform=learn_config.platform,
+                            niche=niche or Episode.load(episode_id).purpose,
+                            generation_params=chosen)
+        exp = store.add_experience(exp)
+    store.update_experience(exp.id,
+                            chosen=True,
+                            upload_status="ready",   # ready to be uploaded by hand
+                            generation_params=chosen)
+    store.close()
+
+    pkg = write_publish_package(exp.id, episode_id, mp4, chosen, niche)
+    return pkg
+
+
+def write_publish_package(experience_id: str, episode_id: str, mp4: Path,
+                          chosen: dict[str, Any], niche: str = "") -> dict[str, Any]:
+    """Serialise a publish package to <learn_dir>/pending/<id>.json and copy the
+    mp4 next to it. Returns the package dict (also printed by the CLI)."""
+    pending_dir = Path(learn_config.learn_dir) / "pending"
+    pending_dir.mkdir(parents=True, exist_ok=True)
+    mp4 = Path(mp4)
+    dest_mp4 = pending_dir / f"{experience_id}.mp4"
+    import shutil
+    shutil.copy2(mp4, dest_mp4)
+
+    hashtags = chosen.get("hashtags") or learn_config.default_hashtags
+    pkg = {
+        "experience_id": experience_id,
+        "episode_id": episode_id,
+        "mp4": str(dest_mp4),
+        "title": chosen.get("title", ""),
+        "caption": chosen.get("caption", ""),
+        "hashtags": hashtags,
+        "post_text": f"{chosen.get('caption', '')} " + " ".join(f"#{h}" for h in hashtags),
+        "privacy": chosen.get("privacy", learn_config.default_privacy),
+        "variation": chosen.get("variation"),
+        "predicted_reward": chosen.get("_predicted_reward"),
+        "uncertainty": chosen.get("_uncertainty"),
+        "uploaded": False,
+    }
+    (pending_dir / f"{experience_id}.json").write_text(json.dumps(pkg, indent=2))
+    return pkg
+
+
+def pending_packages() -> list[dict[str, Any]]:
+    """All publish packages not yet marked uploaded."""
+    pending_dir = Path(learn_config.learn_dir) / "pending"
+    if not pending_dir.exists():
+        return []
+    out = []
+    for j in sorted(pending_dir.glob("*.json")):
+        try:
+            pkg = json.loads(j.read_text())
+        except Exception:
+            continue
+        if not pkg.get("uploaded"):
+            out.append(pkg)
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Manual metrics recording (the agent reads them from the account, you run this)
+# ---------------------------------------------------------------------------
+def record_metrics(experience_id: str, metrics: dict[str, float],
+                   *, mark_uploaded: bool = True,
+                   video_id: str | None = None) -> dict[str, Any]:
+    """Record metrics observed on the account (by hand or via the browser-vision
+    monitor) for a pending/ready experience.
+
+    Appends an immutable snapshot, scores reward, and flips the experience to
+    `uploaded` + `posted_at` (so the scheduled harvester would pick it up if you
+    later enable automated re-polls). Returns a summary.
+    """
+    store = db.open_db()
+    exp = store.get_experience(experience_id)
+    if exp is None:
+        store.close()
+        raise KeyError(f"no experience {experience_id}")
+    m = {k: float(v) for k, v in metrics.items() if isinstance(v, (int, float))}
+    now = time.time()
+    off = 0.0 if exp.posted_at is None else round(now - exp.posted_at, 1)
+    snap = db.MetricSnapshot(experience_id=experience_id, t_offset=off,
+                             captured_at=now, metrics=m)
+    added = store.add_snapshot(snap)
+    r = reward.score(m)
+    updates: dict[str, Any] = {"reward": round(r, 5)}
+    if mark_uploaded:
+        updates["upload_status"] = "uploaded"
+        updates["posted_at"] = exp.posted_at or now
+    if video_id:
+        updates["video_id"] = video_id
+    store.update_experience(experience_id, **updates)
+    # mark the pending package uploaded so it drops off the 'to publish' list
+    pending = Path(learn_config.learn_dir) / "pending" / f"{experience_id}.json"
+    if pending.exists():
+        try:
+            p = json.loads(pending.read_text())
+            p["uploaded"] = True
+            p["video_id"] = video_id or p.get("video_id")
+            pending.write_text(json.dumps(p, indent=2))
+        except Exception:
+            pass
+    store.close()
+    return {"experience_id": experience_id, "captured": 1 if added else 0,
+            "reward": round(r, 5), "metrics": m, "uploaded": mark_uploaded}
+
+
+# ---------------------------------------------------------------------------
+# Auto-publish (legacy / future automated path — inert while manual_upload=True)
+# ---------------------------------------------------------------------------
 def publish_best(episode_id: str, candidates: list[dict[str, Any]],
                  *, mp4: str | Path | None = None, privacy: str | None = None,
                  niche: str = "") -> dict[str, Any]:
@@ -89,6 +235,9 @@ def publish_best(episode_id: str, candidates: list[dict[str, Any]],
     untrained bandit will try varied arms instead of always picking the first
     sorted candidate. This is what makes the experience set diverse enough to
     learn from. Returns the upload result + chosen meta.
+
+    NOTE: only used when learn_config.manual_upload is False. With manual
+    upload (the default), use select_and_package() instead.
     """
     engine = eng.get_engine()
     chosen, mean, std = engine.best(candidates)
@@ -130,35 +279,55 @@ def publish_best(episode_id: str, candidates: list[dict[str, Any]],
 
 
 # ---------------------------------------------------------------------------
-# One full autonomous cycle: prepare -> publish -> schedule harvest
+# One full autonomous cycle: prepare -> (manual package | auto publish) -> seed
 # ---------------------------------------------------------------------------
 def run_cycle(episode_id: str, *, niche: str = "", hashtags=None,
               caption: str = "", parent_id: str | None = None,
               mp4: str | Path | None = None, privacy: str | None = None,
               auto_train: bool = True) -> dict[str, Any]:
-    """The atomic 'experiment' step. Returns a status dict for the CLI/web."""
+    """The atomic 'experiment' step. Returns a status dict for the CLI/web.
+
+    With manual_upload (default) it emits a publish package instead of
+    uploading — you upload the video yourself, then run `kc learn record ...`
+    (or let the browser-vision monitor do it) to feed metrics back.
+    """
     candidates = prepare_candidates(episode_id, parent_id=parent_id, niche=niche,
                                     hashtags=hashtags, caption=caption)
     summary = optimize.summarize_population(candidates)
-    pub = publish_best(episode_id, candidates, mp4=mp4, privacy=privacy, niche=niche)
 
-    # immediate (t=0) snapshot so there's always at least one data point
-    hv.harvest_once(pub["experience_id"])
+    if learn_config.manual_upload:
+        pkg = select_and_package(episode_id, candidates, mp4=mp4,
+                                 privacy=privacy, niche=niche)
+        res: dict[str, Any] = {
+            "mode": "manual_upload",
+            "experience_id": pkg["experience_id"],
+            "population": summary,
+            "chosen_variation": pkg["variation"],
+            "chosen_predicted_reward": pkg["predicted_reward"],
+            "publish_package": pkg,
+            "next_step": "upload mp4 by hand, then `kc learn record <id> "
+                         "--views .. --likes ..` (or let the monitor do it)",
+        }
+    else:
+        pub = publish_best(episode_id, candidates, mp4=mp4, privacy=privacy, niche=niche)
+        # immediate (t=0) snapshot so there's always at least one data point
+        hv.harvest_once(pub["experience_id"])
+        res = {
+            "mode": "auto_upload",
+            "experience_id": pub["experience_id"],
+            "population": summary,
+            "chosen_variation": pub["chosen"].get("variation"),
+            "chosen_predicted_reward": pub["chosen"].get("_predicted_reward"),
+            "platform": learn_config.platform,
+            "upload_status": pub["upload"].get("status"),
+            "video_id": pub["upload"].get("video_id"),
+            "next_harvest": "scheduled per poll_schedule",
+        }
 
     if auto_train:
         tr.maybe_retrain()
 
-    return {
-        "episode_id": episode_id,
-        "experience_id": pub["experience_id"],
-        "population": summary,
-        "chosen_variation": pub["chosen"].get("variation"),
-        "chosen_predicted_reward": pub["chosen"].get("_predicted_reward"),
-        "platform": learn_config.platform,
-        "upload_status": pub["upload"].get("status"),
-        "video_id": pub["upload"].get("video_id"),
-        "next_harvest": "scheduled per poll_schedule",
-    }
+    return res
 
 
 def status() -> dict[str, Any]:

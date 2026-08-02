@@ -17,7 +17,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from starlette.responses import StreamingResponse
@@ -229,13 +229,41 @@ async def learn_recommend(episode: str):
 @app.post("/api/learn/cycle")
 async def learn_cycle(req: Request):
     from kleincannon.learn import agency
+    from kleincannon.learn import learn_config
     body = await req.json()
+    if body.get("auto"):
+        learn_config.manual_upload = False
+    elif body.get("manual"):
+        learn_config.manual_upload = True
     out = agency.run_cycle(
         body["episode"], niche=body.get("niche", ""),
         hashtags=[h.strip() for h in (body.get("hashtags") or "").split(",") if h.strip()],
         caption=body.get("caption", ""), parent_id=body.get("parent"),
         privacy=body.get("privacy"), auto_train=not body.get("no_train", False))
     return out
+
+
+@app.get("/api/learn/pending")
+async def learn_pending():
+    from kleincannon.learn import agency
+    return agency.pending_packages()
+
+
+@app.post("/api/learn/record")
+async def learn_record(req: Request):
+    from kleincannon.learn import agency
+    body = await req.json()
+    exp_id = body.get("experience_id") or body.get("id")
+    if not exp_id:
+        return JSONResponse(status_code=400, content={"error": "experience_id required"})
+    metrics = {k: float(v) for k, v in (body.get("metrics") or {}).items()
+               if isinstance(v, (int, float)) and v}
+    if not metrics:
+        return JSONResponse(status_code=400, content={"error": "no metrics provided"})
+    return agency.record_metrics(
+        exp_id, metrics,
+        mark_uploaded=not body.get("no_mark_uploaded", False),
+        video_id=body.get("video_id"))
 
 
 @app.post("/api/learn/harvest")

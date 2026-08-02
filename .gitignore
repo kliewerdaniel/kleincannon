@@ -41,3 +41,4 @@ __pycache__/
 # — machine-local). NOTE: only the top-level learn/ data dir is ignored;
 # the SOURCE package kleincannon/learn/ must stay tracked.
 /learn/
+/learn/pending/

@@ -180,6 +180,7 @@ class ExperienceDB:
 
     def list_experiences(self, only_posted: bool = False,
                          only_chosen: bool = False,
+                         only_status: str | None = None,
                          limit: int = 500) -> list[Experience]:
         q = "SELECT * FROM experiences WHERE 1=1"
         args: list[Any] = []
@@ -187,6 +188,9 @@ class ExperienceDB:
             q += " AND posted_at IS NOT NULL"
         if only_chosen:
             q += " AND chosen=1"
+        if only_status is not None:
+            q += " AND upload_status=?"
+            args.append(only_status)
         q += " ORDER BY created_at DESC LIMIT ?"
         args.append(limit)
         rows = self.conn.execute(q, args).fetchall()

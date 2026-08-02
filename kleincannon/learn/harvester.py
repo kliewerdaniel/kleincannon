@@ -74,9 +74,14 @@ def harvest_once(experience_id: str) -> dict[str, Any]:
 
 def harvest_all() -> dict[str, Any]:
     """Harvest every posted experience that is due. Used by the background
-    loop and the `kc learn harvest` command."""
+    loop and the `kc learn harvest` command.
+
+    Manual-upload rows in `upload_status='ready'` are skipped — there is no
+    real platform video_id to poll until you upload and record it.
+    """
     store = db.open_db()
-    posted = store.list_experiences(only_posted=True)
+    posted = [e for e in store.list_experiences(only_posted=True)
+              if e.upload_status not in ("ready", "pending")]
     store.close()
     results = []
     total = 0

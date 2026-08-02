@@ -56,6 +56,12 @@ class LearnConfig:
     token_path: str = str(LEARN_DIR / "tiktok_token.json")
 
     # ---- upload ----
+    # True = the agent prepares a publish package and YOU upload it by hand to
+    # the TikTok app; the agent then reads analytics from the account and
+    # records them back. This avoids the TikTok Content Posting API entirely
+    # (no OAuth/PKCE, no app-review, no partner-gated metrics). Set False to
+    # re-enable automated upload via the TikTokAdapter (only when a token exists).
+    manual_upload: bool = True
     upload_auto_publish: bool = False       # require explicit decision normally
     upload_retries: int = 3
     upload_retry_base_delay: float = 5.0    # seconds; exponential backoff

@@ -30,8 +30,10 @@
 
     <section class="card">
       <h2>Run an experiment (one cycle)</h2>
-      <p class="hint">Generates a population of candidate configs with the bandit, publishes the
-        best to the active platform, records the experience, and schedules metric harvesting.</p>
+      <p class="hint">Generates a population of candidate configs with the bandit, picks the
+        best, and writes a <b>publish package</b> (mp4 + caption + hashtags) you upload by hand
+        to the TikTok app. After it's live, read the metrics (or let the monitor do it) and
+        <b>record</b> them below so the bandit learns.</p>
       <label>Episode id
         <input id="ep" placeholder="e.g. 2026-08-01-why-the-ocean-is-salty" />
       </label>
@@ -57,6 +59,36 @@
         <button id="train">Retrain</button>
       </div>
       <pre id="out" class="out">—</pre>
+    </section>
+
+    <section class="card">
+      <h2>Publish packages (awaiting manual upload)</h2>
+      <p class="hint">Videos the engine has prepared for you. Upload each to the TikTok app,
+        then record its metrics below.</p>
+      <div id="pending" class="kv">loading…</div>
+    </section>
+
+    <section class="card">
+      <h2>Record metrics for a posted video</h2>
+      <p class="hint">Paste the numbers from the TikTok app (or from Creator Center). Leave
+        blank anything you can't see. The engine appends a snapshot and learns.</p>
+      <label>Experience id
+        <input id="rid" placeholder="from the publish package / cycle output" />
+      </label>
+      <div class="grid2">
+        <label>Views <input id="m_views" type="number" value="0" /></label>
+        <label>Likes <input id="m_likes" type="number" value="0" /></label>
+        <label>Comments <input id="m_comments" type="number" value="0" /></label>
+        <label>Shares <input id="m_shares" type="number" value="0" /></label>
+        <label>Saves <input id="m_saves" type="number" value="0" /></label>
+        <label>Followers gained <input id="m_followers" type="number" value="0" /></label>
+        <label>Watch time (s) <input id="m_watch" type="number" value="0" /></label>
+        <label>TikTok video id <input id="m_vid" placeholder="optional" /></label>
+      </div>
+      <div class="btn-row">
+        <button id="record" class="primary">Record metrics</button>
+      </div>
+      <pre id="recout" class="out">—</pre>
     </section>
 
     <section class="card">
@@ -91,6 +123,23 @@ async function refresh() {
     const plat = st.platform === "tiktok" ? "TikTok (real)" : "Mock (local)";
     $("#platform-dot").textContent = plat;
   } catch (e) { $("#engine").textContent = "error: " + e; }
+
+  try {
+    const pkgs = await (await fetch("/api/learn/pending")).json();
+    if (!pkgs.length) {
+      $("#pending").innerHTML = "<i>no packages pending — run a cycle</i>";
+    } else {
+      $("#pending").innerHTML = pkgs.map(p => `
+        <div class="pkg">
+          <div><b>${p.episode_id}</b> · variation <b>${p.variation ?? "—"}</b></div>
+          <div>predicted reward ${p.predicted_reward ?? "?"} (±${p.uncertainty ?? "?"})</div>
+          <div class="mono">${p.mp4}</div>
+          <div class="mono">caption: ${p.caption || "(none)"}</div>
+          <div class="mono">hashtags: ${p.hashtags ? p.hashtags.map(h => "#" + h).join(" ") : "(none)"}</div>
+          <div class="mono">exp id: ${p.experience_id}</div>
+        </div>`).join("");
+    }
+  } catch (e) { $("#pending").textContent = "error: " + e; }
 
   try {
     const h = await (await fetch("/api/learn/history")).json();
@@ -132,6 +181,25 @@ $("#train").onclick = async () => {
   $("#out").textContent = "training…";
   const res = await postJSON("/api/learn/train");
   $("#out").textContent = JSON.stringify(res, null, 2);
+  refresh();
+};
+$("#record").onclick = async () => {
+  const id = $("#rid").value.trim();
+  if (!id) { $("#recout").textContent = "enter an experience id"; return; }
+  const metrics = {};
+  const map = {views:"m_views", likes:"m_likes", comments:"m_comments",
+               shares:"m_shares", saves:"m_saves", followers_gained:"m_followers",
+               watch_time:"m_watch"};
+  for (const [k, el] of Object.entries(map)) {
+    const v = parseFloat($("#" + el).value);
+    if (v > 0) metrics[k] = v;
+  }
+  const vid = $("#m_vid").value.trim();
+  const body = {experience_id: id, metrics};
+  if (vid) body.video_id = vid;
+  $("#recout").textContent = "recording…";
+  const res = await postJSON("/api/learn/record", body);
+  $("#recout").textContent = JSON.stringify(res, null, 2);
   refresh();
 };
 

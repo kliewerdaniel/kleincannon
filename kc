@@ -83,19 +83,35 @@ def main(argv=None) -> int:
     lp = sub.add_parser("learn", help="autonomous learning / optimization engine")
     learn_sub = lp.add_subparsers(dest="learn_cmd", required=True)
     linit = learn_sub.add_parser("init", help="create learn config + DB, no network")
-    lrun = learn_sub.add_parser("cycle", help="prepare candidates + publish best (one experiment)")
+    lrun = learn_sub.add_parser("cycle", help="prepare candidates + choose best (+publish package in manual mode)")
     lrun.add_argument("-e", "--episode", required=True)
     lrun.add_argument("--niche", default="")
     lrun.add_argument("--hashtags", default="", help="comma-separated")
     lrun.add_argument("--caption", default="")
     lrun.add_argument("--privacy", default=None, help="SELF_ONLY | PUBLIC_TO_ALL")
     lrun.add_argument("--parent", default=None, help="parent experience id (lineage)")
+    lrun.add_argument("--manual", action="store_true", help="force manual publish package (default)")
+    lrun.add_argument("--auto", action="store_true", help="force auto-upload via TikTok adapter (needs token)")
     lrun.add_argument("--no-train", action="store_true")
     lharv = learn_sub.add_parser("harvest", help="poll due metric snapshots for all posted")
     ltrain = learn_sub.add_parser("train", help="retrain bandit from full history")
     lstatus = learn_sub.add_parser("status", help="engine + experience summary")
     lrec = learn_sub.add_parser("recommend", help="best next generation config for an episode")
     lrec.add_argument("-e", "--episode", required=True)
+    lpend = learn_sub.add_parser("pending", help="list publish packages awaiting manual upload")
+    lrec2 = learn_sub.add_parser("record", help="record metrics for a manually-uploaded video")
+    lrec2.add_argument("experience_id", help="id from `kc learn pending` / cycle output")
+    lrec2.add_argument("--views", type=float, default=0.0)
+    lrec2.add_argument("--likes", type=float, default=0.0)
+    lrec2.add_argument("--comments", type=float, default=0.0)
+    lrec2.add_argument("--shares", type=float, default=0.0)
+    lrec2.add_argument("--saves", type=float, default=0.0)
+    lrec2.add_argument("--followers", type=float, default=0.0, help="followers_gained")
+    lrec2.add_argument("--watch-time", type=float, default=0.0)
+    lrec2.add_argument("--completion", type=float, default=0.0, help="completion_rate 0..1")
+    lrec2.add_argument("--profile-visits", type=float, default=0.0)
+    lrec2.add_argument("--video-id", default=None, help="TikTok video id (optional)")
+    lrec2.add_argument("--no-mark-uploaded", action="store_true", help="only append a snapshot, don't flip status")
     lhist = learn_sub.add_parser("history", help="models + experiments")
     lreset = learn_sub.add_parser("reset", help="wipe bandit model (keep DB)")
     args = p.parse_args(argv)
@@ -156,10 +172,30 @@ def main(argv=None) -> int:
             dbg.close()
         elif args.learn_cmd == "cycle":
             hashtags = [h.strip() for h in args.hashtags.split(",") if h.strip()]
+            # manual/auto override (config default is manual_upload=True)
+            if args.auto:
+                learn_config.manual_upload = False
+            elif args.manual:
+                learn_config.manual_upload = True
             out = agency.run_cycle(
                 args.episode, niche=args.niche, hashtags=hashtags,
                 caption=args.caption, parent_id=args.parent, privacy=args.privacy,
                 auto_train=not args.no_train)
+            print(json.dumps(out, indent=2, default=str))
+        elif args.learn_cmd == "pending":
+            pkgs = agency.pending_packages()
+            print(json.dumps(pkgs, indent=2, default=str))
+        elif args.learn_cmd == "record":
+            metrics = {
+                "views": args.views, "likes": args.likes, "comments": args.comments,
+                "shares": args.shares, "saves": args.saves,
+                "followers_gained": args.followers, "watch_time": args.watch_time,
+                "completion_rate": args.completion, "profile_visits": args.profile_visits,
+            }
+            metrics = {k: v for k, v in metrics.items() if v}
+            out = agency.record_metrics(args.experience_id, metrics,
+                                        mark_uploaded=not args.no_mark_uploaded,
+                                        video_id=args.video_id)
             print(json.dumps(out, indent=2, default=str))
         elif args.learn_cmd == "harvest":
             out = hv.harvest_all()

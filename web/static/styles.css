@@ -59,6 +59,9 @@ textarea { resize: vertical; }
 .check input, .switch input { width: auto; margin-right: 8px; vertical-align: middle; }
 .toggle-row { display: flex; align-items: center; gap: 12px; }
 .hint { color: var(--muted); font-size: 11px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; margin-bottom: 12px; }
+.pkg { border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; margin-bottom: 10px; background: #0e141c; }
+.pkg .mono { font: 11px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); word-break: break-all; }
 .hidden { display: none !important; }
 button#runbtn {
   width: 100%; padding: 13px; border: 0; border-radius: 11px; cursor: pointer;
