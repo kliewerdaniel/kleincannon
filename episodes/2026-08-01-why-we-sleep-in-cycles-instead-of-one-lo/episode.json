@@ -1,0 +1,771 @@
+{
+  "id": "2026-08-01-why-we-sleep-in-cycles-instead-of-one-lo",
+  "topic": "Why we sleep in cycles instead of one long stretch",
+  "hook": "",
+  "purpose": "",
+  "beats": [
+    {
+      "id": "b01",
+      "text": "You never actually sleep through the night. Even in deep rest, your brain wakes you a little, dozens of times.",
+      "image_prompt": "wide establishing shot: You never actually sleep through the night. Even in deep rest, your brain wakes you a little, dozens of times. cinematic editorial photograph, vertical 9:16 composition, shot on 35mm, shallow depth of field, moody directional window light, desaturated teal and amber palette, film grain, high detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
+      "image": "images/b01.png",
+      "audio_start": 0.0,
+      "audio_end": 7.02,
+      "motion": "in"
+    },
+    {
+      "id": "b02",
+      "text": "We move through cycles about ninety minutes each, drifting from light sleep down into deep, then back up toward dreaming.",
+      "image_prompt": "medium shot: We move through cycles about ninety minutes each, drifting from light sleep down into deep, then back up toward dreaming. cinematic editorial photograph, vertical 9:16 composition, shot on 35mm, shallow depth of field, moody directional window light, desaturated teal and amber palette, film grain, high detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
+      "image": "images/b02.png",
+      "audio_start": 7.02,
+      "audio_end": 15.62,
+      "motion": "in"
+    },
+    {
+      "id": "b03",
+      "text": "Lose the deep stage and you wake groggy no matter how long you stayed in bed.",
+      "image_prompt": "close-up detail: Lose the deep stage and you wake groggy no matter how long you stayed in bed. cinematic editorial photograph, vertical 9:16 composition, shot on 35mm, shallow depth of field, moody directional window light, desaturated teal and amber palette, film grain, high detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
+      "image": "images/b03.png",
+      "audio_start": 15.62,
+      "audio_end": 19.64,
+      "motion": "in"
+    },
+    {
+      "id": "b04",
+      "text": "A nap is just one of those cycles, borrowed early, which is why twenty minutes can reset your whole afternoon.",
+      "image_prompt": "over-the-shoulder angle: A nap is just one of those cycles, borrowed early, which is why twenty minutes can reset your whole afternoon. cinematic editorial photograph, vertical 9:16 composition, shot on 35mm, shallow depth of field, moody directional window light, desaturated teal and amber palette, film grain, high detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
+      "image": "images/b04.png",
+      "audio_start": 19.64,
+      "audio_end": 25.18,
+      "motion": "in"
+    },
+    {
+      "id": "b05",
+      "text": "Your body keeps time by light, not by clocks, so a bright screen at midnight tells it the sun is still up.",
+      "image_prompt": "low-angle heroic framing: Your body keeps time by light, not by clocks, so a bright at midnight tells it the sun is still up. cinematic editorial photograph, vertical 9:16 composition, shot on 35mm, shallow depth of field, moody directional window light, desaturated teal and amber palette, film grain, high detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
+      "image": "images/b05.png",
+      "audio_start": 25.18,
+      "audio_end": 33.74,
+      "motion": "in"
+    },
+    {
+      "id": "b06",
+      "text": "Sleep is not a switch you flip. It is a rhythm you fall into, again and again, until morning.",
+      "image_prompt": "extreme close-up: Sleep is not a switch you flip. It is a rhythm you fall into, again and again, until morning. cinematic editorial photograph, vertical 9:16 composition, shot on 35mm, shallow depth of field, moody directional window light, desaturated teal and amber palette, film grain, high detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
+      "image": "images/b06.png",
+      "audio_start": 33.74,
+      "audio_end": 38.9,
+      "motion": "in"
+    }
+  ],
+  "voice": "chris",
+  "style_suffix": "cinematic editorial photograph, vertical 9:16 composition, shot on 35mm, shallow depth of field, moody directional window light, desaturated teal and amber palette, film grain, high detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
+  "cta": "",
+  "voice_audio": "audio/voice.wav",
+  "words": [
+    {
+      "word": "You",
+      "key": "you",
+      "start": 0.0,
+      "end": 0.14
+    },
+    {
+      "word": "never",
+      "key": "never",
+      "start": 0.14,
+      "end": 0.46
+    },
+    {
+      "word": "actually",
+      "key": "actually",
+      "start": 0.46,
+      "end": 0.86
+    },
+    {
+      "word": "sleep",
+      "key": "sleep",
+      "start": 0.86,
+      "end": 1.18
+    },
+    {
+      "word": "through",
+      "key": "through",
+      "start": 1.18,
+      "end": 1.4
+    },
+    {
+      "word": "the",
+      "key": "the",
+      "start": 1.4,
+      "end": 1.56
+    },
+    {
+      "word": "night,",
+      "key": "night",
+      "start": 1.56,
+      "end": 1.84
+    },
+    {
+      "word": "even",
+      "key": "even",
+      "start": 1.98,
+      "end": 2.24
+    },
+    {
+      "word": "in",
+      "key": "in",
+      "start": 2.24,
+      "end": 2.5
+    },
+    {
+      "word": "deep",
+      "key": "deep",
+      "start": 2.5,
+      "end": 2.88
+    },
+    {
+      "word": "rest.",
+      "key": "rest",
+      "start": 2.88,
+      "end": 3.32
+    },
+    {
+      "word": "Your",
+      "key": "your",
+      "start": 3.66,
+      "end": 3.8
+    },
+    {
+      "word": "brain",
+      "key": "brain",
+      "start": 3.8,
+      "end": 4.08
+    },
+    {
+      "word": "wakes",
+      "key": "wakes",
+      "start": 4.08,
+      "end": 4.38
+    },
+    {
+      "word": "you",
+      "key": "you",
+      "start": 4.38,
+      "end": 4.68
+    },
+    {
+      "word": "a",
+      "key": "a",
+      "start": 4.68,
+      "end": 4.8
+    },
+    {
+      "word": "little,",
+      "key": "little",
+      "start": 4.8,
+      "end": 5.1
+    },
+    {
+      "word": "dozens",
+      "key": "dozens",
+      "start": 5.26,
+      "end": 5.58
+    },
+    {
+      "word": "of",
+      "key": "of",
+      "start": 5.58,
+      "end": 5.92
+    },
+    {
+      "word": "times.",
+      "key": "times",
+      "start": 5.92,
+      "end": 6.3
+    },
+    {
+      "word": "We",
+      "key": "we",
+      "start": 7.02,
+      "end": 7.2
+    },
+    {
+      "word": "move",
+      "key": "move",
+      "start": 7.2,
+      "end": 7.46
+    },
+    {
+      "word": "through",
+      "key": "through",
+      "start": 7.46,
+      "end": 7.88
+    },
+    {
+      "word": "cycles",
+      "key": "cycles",
+      "start": 7.88,
+      "end": 8.42
+    },
+    {
+      "word": "about",
+      "key": "about",
+      "start": 8.42,
+      "end": 8.82
+    },
+    {
+      "word": "90",
+      "key": "90",
+      "start": 8.82,
+      "end": 9.2
+    },
+    {
+      "word": "minutes",
+      "key": "minutes",
+      "start": 9.2,
+      "end": 9.64
+    },
+    {
+      "word": "each,",
+      "key": "each",
+      "start": 9.64,
+      "end": 10.08
+    },
+    {
+      "word": "drifting",
+      "key": "drifting",
+      "start": 10.28,
+      "end": 10.76
+    },
+    {
+      "word": "from",
+      "key": "from",
+      "start": 10.76,
+      "end": 11.14
+    },
+    {
+      "word": "light",
+      "key": "light",
+      "start": 11.14,
+      "end": 11.4
+    },
+    {
+      "word": "sleep",
+      "key": "sleep",
+      "start": 11.4,
+      "end": 11.84
+    },
+    {
+      "word": "down",
+      "key": "down",
+      "start": 11.84,
+      "end": 12.54
+    },
+    {
+      "word": "into",
+      "key": "into",
+      "start": 12.54,
+      "end": 12.92
+    },
+    {
+      "word": "deep,",
+      "key": "deep",
+      "start": 12.92,
+      "end": 13.22
+    },
+    {
+      "word": "then",
+      "key": "then",
+      "start": 13.4,
+      "end": 13.58
+    },
+    {
+      "word": "back",
+      "key": "back",
+      "start": 13.58,
+      "end": 13.88
+    },
+    {
+      "word": "up",
+      "key": "up",
+      "start": 13.88,
+      "end": 14.12
+    },
+    {
+      "word": "toward",
+      "key": "toward",
+      "start": 14.12,
+      "end": 14.38
+    },
+    {
+      "word": "dreaming.",
+      "key": "dreaming",
+      "start": 14.38,
+      "end": 14.86
+    },
+    {
+      "word": "Lows",
+      "key": "lows",
+      "start": 15.32,
+      "end": 15.42
+    },
+    {
+      "word": "a",
+      "key": "a",
+      "start": 15.42,
+      "end": 15.62
+    },
+    {
+      "word": "deep",
+      "key": "deep",
+      "start": 15.62,
+      "end": 15.84
+    },
+    {
+      "word": "stage",
+      "key": "stage",
+      "start": 15.84,
+      "end": 16.24
+    },
+    {
+      "word": "and",
+      "key": "and",
+      "start": 16.24,
+      "end": 16.6
+    },
+    {
+      "word": "you",
+      "key": "you",
+      "start": 16.6,
+      "end": 16.76
+    },
+    {
+      "word": "wake",
+      "key": "wake",
+      "start": 16.76,
+      "end": 17.0
+    },
+    {
+      "word": "groggy",
+      "key": "groggy",
+      "start": 17.0,
+      "end": 17.5
+    },
+    {
+      "word": "no",
+      "key": "no",
+      "start": 17.5,
+      "end": 18.02
+    },
+    {
+      "word": "matter",
+      "key": "matter",
+      "start": 18.02,
+      "end": 18.16
+    },
+    {
+      "word": "how",
+      "key": "how",
+      "start": 18.16,
+      "end": 18.38
+    },
+    {
+      "word": "long",
+      "key": "long",
+      "start": 18.38,
+      "end": 18.58
+    },
+    {
+      "word": "you",
+      "key": "you",
+      "start": 18.58,
+      "end": 18.72
+    },
+    {
+      "word": "stayed",
+      "key": "stayed",
+      "start": 18.72,
+      "end": 18.9
+    },
+    {
+      "word": "in",
+      "key": "in",
+      "start": 18.9,
+      "end": 19.1
+    },
+    {
+      "word": "bed.",
+      "key": "bed",
+      "start": 19.1,
+      "end": 19.4
+    },
+    {
+      "word": "A",
+      "key": "a",
+      "start": 19.64,
+      "end": 19.72
+    },
+    {
+      "word": "nap",
+      "key": "nap",
+      "start": 19.72,
+      "end": 19.92
+    },
+    {
+      "word": "is",
+      "key": "is",
+      "start": 19.92,
+      "end": 20.12
+    },
+    {
+      "word": "just",
+      "key": "just",
+      "start": 20.12,
+      "end": 20.26
+    },
+    {
+      "word": "one",
+      "key": "one",
+      "start": 20.26,
+      "end": 20.44
+    },
+    {
+      "word": "of",
+      "key": "of",
+      "start": 20.44,
+      "end": 20.52
+    },
+    {
+      "word": "those",
+      "key": "those",
+      "start": 20.52,
+      "end": 20.7
+    },
+    {
+      "word": "cycles",
+      "key": "cycles",
+      "start": 20.7,
+      "end": 21.12
+    },
+    {
+      "word": "borrowed",
+      "key": "borrowed",
+      "start": 21.12,
+      "end": 21.48
+    },
+    {
+      "word": "early,",
+      "key": "early",
+      "start": 21.48,
+      "end": 21.94
+    },
+    {
+      "word": "which",
+      "key": "which",
+      "start": 22.02,
+      "end": 22.14
+    },
+    {
+      "word": "is",
+      "key": "is",
+      "start": 22.14,
+      "end": 22.28
+    },
+    {
+      "word": "why",
+      "key": "why",
+      "start": 22.28,
+      "end": 22.5
+    },
+    {
+      "word": "20",
+      "key": "20",
+      "start": 22.5,
+      "end": 22.78
+    },
+    {
+      "word": "minutes",
+      "key": "minutes",
+      "start": 22.78,
+      "end": 23.04
+    },
+    {
+      "word": "can",
+      "key": "can",
+      "start": 23.04,
+      "end": 23.22
+    },
+    {
+      "word": "reset",
+      "key": "reset",
+      "start": 23.22,
+      "end": 23.58
+    },
+    {
+      "word": "your",
+      "key": "your",
+      "start": 23.58,
+      "end": 23.78
+    },
+    {
+      "word": "whole",
+      "key": "whole",
+      "start": 23.78,
+      "end": 24.0
+    },
+    {
+      "word": "afternoon.",
+      "key": "afternoon",
+      "start": 24.0,
+      "end": 24.5
+    },
+    {
+      "word": "Your",
+      "key": "your",
+      "start": 25.18,
+      "end": 25.36
+    },
+    {
+      "word": "body",
+      "key": "body",
+      "start": 25.36,
+      "end": 25.64
+    },
+    {
+      "word": "keeps",
+      "key": "keeps",
+      "start": 25.64,
+      "end": 26.0
+    },
+    {
+      "word": "time",
+      "key": "time",
+      "start": 26.0,
+      "end": 26.32
+    },
+    {
+      "word": "by",
+      "key": "by",
+      "start": 26.32,
+      "end": 26.54
+    },
+    {
+      "word": "light,",
+      "key": "light",
+      "start": 26.54,
+      "end": 26.92
+    },
+    {
+      "word": "not",
+      "key": "not",
+      "start": 27.56,
+      "end": 27.86
+    },
+    {
+      "word": "by",
+      "key": "by",
+      "start": 27.86,
+      "end": 28.14
+    },
+    {
+      "word": "clocks.",
+      "key": "clocks",
+      "start": 28.14,
+      "end": 28.5
+    },
+    {
+      "word": "So",
+      "key": "so",
+      "start": 29.2,
+      "end": 29.68
+    },
+    {
+      "word": "a",
+      "key": "a",
+      "start": 29.68,
+      "end": 29.98
+    },
+    {
+      "word": "bright",
+      "key": "bright",
+      "start": 29.98,
+      "end": 30.2
+    },
+    {
+      "word": "screen",
+      "key": "screen",
+      "start": 30.2,
+      "end": 30.64
+    },
+    {
+      "word": "at",
+      "key": "at",
+      "start": 30.64,
+      "end": 30.82
+    },
+    {
+      "word": "midnight",
+      "key": "midnight",
+      "start": 30.82,
+      "end": 31.18
+    },
+    {
+      "word": "tells",
+      "key": "tells",
+      "start": 31.18,
+      "end": 31.6
+    },
+    {
+      "word": "it",
+      "key": "it",
+      "start": 31.6,
+      "end": 31.88
+    },
+    {
+      "word": "the",
+      "key": "the",
+      "start": 31.88,
+      "end": 32.24
+    },
+    {
+      "word": "sun",
+      "key": "sun",
+      "start": 32.24,
+      "end": 32.48
+    },
+    {
+      "word": "is",
+      "key": "is",
+      "start": 32.48,
+      "end": 32.64
+    },
+    {
+      "word": "still",
+      "key": "still",
+      "start": 32.64,
+      "end": 32.88
+    },
+    {
+      "word": "up.",
+      "key": "up",
+      "start": 32.88,
+      "end": 33.24
+    },
+    {
+      "word": "Sleep",
+      "key": "sleep",
+      "start": 33.74,
+      "end": 33.78
+    },
+    {
+      "word": "is",
+      "key": "is",
+      "start": 33.78,
+      "end": 34.0
+    },
+    {
+      "word": "not",
+      "key": "not",
+      "start": 34.0,
+      "end": 34.22
+    },
+    {
+      "word": "a",
+      "key": "a",
+      "start": 34.22,
+      "end": 34.38
+    },
+    {
+      "word": "switch",
+      "key": "switch",
+      "start": 34.38,
+      "end": 34.56
+    },
+    {
+      "word": "you",
+      "key": "you",
+      "start": 34.56,
+      "end": 34.78
+    },
+    {
+      "word": "flip,",
+      "key": "flip",
+      "start": 34.78,
+      "end": 35.02
+    },
+    {
+      "word": "it",
+      "key": "it",
+      "start": 35.12,
+      "end": 35.2
+    },
+    {
+      "word": "is",
+      "key": "is",
+      "start": 35.2,
+      "end": 35.38
+    },
+    {
+      "word": "a",
+      "key": "a",
+      "start": 35.38,
+      "end": 35.54
+    },
+    {
+      "word": "rhythm",
+      "key": "rhythm",
+      "start": 35.54,
+      "end": 35.84
+    },
+    {
+      "word": "you",
+      "key": "you",
+      "start": 35.84,
+      "end": 36.08
+    },
+    {
+      "word": "fall",
+      "key": "fall",
+      "start": 36.08,
+      "end": 36.36
+    },
+    {
+      "word": "into",
+      "key": "into",
+      "start": 36.36,
+      "end": 36.7
+    },
+    {
+      "word": "again",
+      "key": "again",
+      "start": 36.7,
+      "end": 37.04
+    },
+    {
+      "word": "and",
+      "key": "and",
+      "start": 37.04,
+      "end": 37.26
+    },
+    {
+      "word": "again",
+      "key": "again",
+      "start": 37.26,
+      "end": 38.04
+    },
+    {
+      "word": "until",
+      "key": "until",
+      "start": 38.04,
+      "end": 38.62
+    },
+    {
+      "word": "morning.",
+      "key": "morning",
+      "start": 38.62,
+      "end": 38.9
+    }
+  ],
+  "final": "2026-08-01-why-we-sleep-in-cycles-instead-of-one-lo.mp4"
+}

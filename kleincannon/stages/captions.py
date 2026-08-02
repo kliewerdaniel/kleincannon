@@ -141,9 +141,12 @@ def run(episode_id: str) -> Episode:
         for ci, card in enumerate(cards):
             c_start = card[0]["start"]
             c_end = card[-1]["end"]
+            if ci == len(cards) - 1:
+                c_end = max(c_end, total)   # last card covers through the end
             if c_start - 0.05 <= t <= c_end + 0.12:
                 for wi, w in enumerate(card):
-                    if w["start"] - 0.04 <= t <= w["end"] + 0.04:
+                    w_end = w["end"] if ci != len(cards) - 1 else max(w["end"], total)
+                    if w["start"] - 0.04 <= t <= w_end + 0.04:
                         return ci, wi
                 return ci, None
         return -1, None

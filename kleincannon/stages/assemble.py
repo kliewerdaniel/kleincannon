@@ -155,6 +155,14 @@ def run(episode_id: str) -> Episode:
         print("[assemble] voice.wav newer than manifest — realigning first …")
         align_stage.run(episode_id)
         ep = Episode.load(episode_id)
+    # The caption frames must be newer than the aligned manifest + audio —
+    # otherwise we'd composite karaoke timed to a *different* TTS run, which
+    # desyncs from the speech and drops the final words. Re-render if stale.
+    import kleincannon.stages.captions as captions_stage
+    if align_stage.needs_recaption(ep):
+        print("[assemble] caption frames stale — re-rendering captions …")
+        captions_stage.run(episode_id)
+        ep = Episode.load(episode_id)
     missing = [b.id for b in ep.beats if not (b.image and (ep.dir / b.image).exists())]
     if missing:
         raise SystemExit(f"missing images for beats {missing} — run images first")

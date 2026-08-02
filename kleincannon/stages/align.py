@@ -94,6 +94,35 @@ def needs_realign(ep: Episode) -> bool:
     return wav.stat().st_mtime > ep.manifest_path.stat().st_mtime + 1.0
 
 
+def needs_recaption(ep: Episode) -> bool:
+    """True when the rendered caption frames are older than the data they
+    depend on (the aligned manifest and the voice audio).
+
+    If either has changed since the caption frames were rendered, the
+    karaoke overlay is stale: it desyncs from the speech and the highlight
+    runs past (or short of) the audio so the last words are never shown. This
+    is what produced the "captions cut off at the end" regression — a `build`
+    ran against caption frames rendered for a *different* TTS run. `build`
+    now calls this and auto-re-renders the captions instead of using stale
+    frames.
+    """
+    frames_dir = ep.dir / "captions" / "frames"
+    if not frames_dir.exists():
+        return True
+    frames = list(frames_dir.glob("frame_*.png"))
+    if not frames:
+        return True
+    newest_frame = max(f.stat().st_mtime for f in frames)
+    ref = 0.0
+    if ep.manifest_path.exists():
+        ref = max(ref, ep.manifest_path.stat().st_mtime)
+    wav = ep.dir / ep.voice_audio if ep.voice_audio else None
+    if wav and wav.exists():
+        ref = max(ref, wav.stat().st_mtime)
+    # frames must be newer than the data they are derived from
+    return newest_frame < ref - 0.5
+
+
 def run(episode_id: str) -> Episode:
     ep = Episode.load(episode_id)
     if not ep.voice_audio:
