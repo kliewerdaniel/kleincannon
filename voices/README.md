@@ -1,48 +1,48 @@
-# Reference voices (F5-TTS zero-shot cloning)
+# Reference voices (Qwen3-TTS in-context voice cloning)
 
-F5-TTS is a **zero-shot** voice-cloning model: it needs a short reference clip of
-the target voice **plus the exact transcript of that clip**, then it can speak any
-text in that voice.
+Qwen3-TTS is an **in-context-learning** voice-cloning model: give it a short
+reference clip of the target voice and it speaks any text in that voice. Unlike
+F5-TTS, it does **not** need a hand-written transcript — `tts.py` transcribes
+each clip automatically with faster-whisper and uses that as `ref_text`.
 
 ## Layout
 
 For a voice named `chris`:
 
 ```
-voices/chris.wav   # the reference clip  (3–10s of clean speech, no music)
-voices/chris.txt   # the EXACT transcript of chris.wav
+voices/chris.wav   # the reference clip  (5–30s of clean speech, no music)
 ```
 
-The `.wav`/`.mp3`/`.flac`/`.ogg` clip is git-ignored (it's a binary asset). Only
-the `.txt` transcript is committed. The default voice is `chris` (see
-`config.DEFAULT_VOICE`).
+Only the `.wav`/`.mp3`/`.flac`/`.m4a`/`.ogg` clip is needed. It is git-ignored
+(binary asset). The auto-transcript is cached to `chris.reftext` (also
+ignored). The default voice is `chris` (`config.DEFAULT_VOICE`).
 
-> **Safety net:** `tts.py` does NOT trust `chris.txt` blindly. If faster-whisper
-> is available it *transcribes the clip itself* and uses that as F5-TTS
-> `ref_text`, cached to `chris.reftext`. A hand-written transcript that drifts
-> from the audio makes F5-TTS echo the mismatched words into every generated
-> line (the "rabbit leak"), so deriving `ref_text` from the clip removes that
-> whole class of bug. The committed `.txt` is only a fallback if whisper is
-> unavailable.
+> **No manual transcript required.** Drop a clip, run `kc tts --voice chris`,
+> and the engine clones it. If you want to verify/override the transcription,
+> inspect or edit `voices/<name>.reftext` (it is regenerated only if the clip
+> changes).
 
-## Making a transcript
+## Available voices
 
-Play the clip and transcribe it **verbatim** — every word, exactly as spoken.
-F5-TTS matches the clip's prosody to the transcript; a mismatch makes the clone
-sound off. A few sentences is ideal.
-
-Example `chris.txt`:
+The full `chris.wav` (the original, uncut clip) ships by default. The
+`vox` companion app's custom voices are also available here:
 
 ```
-Hey, this is Chris. I run a deal team and I'm always buried in rent rolls.
+A.wav  John.mp3  Me.wav  chris.wav  elon.mp3  joe.mp3
+obama.mp3  rasPutin.mp3  ryan.mp3  ryan.wav  trump.mp3  zuck.mp3
+```
+
+Pick any with `--voice <name>` (CLI) or `voice: <name>` (web form), e.g.:
+
+```bash
+./kc tts -e 2026-08-01-why-the-ocean-is-salty --voice ryan
+./kc all --topic "..." --voice obama
 ```
 
 ## Adding a new voice
 
-1. Drop `yourname.wav` here.
-2. Write `yourname.txt` with its transcript.
-3. Run with `--voice yourname` (CLI) or set `voice: yourname` in the web form.
+1. Drop `yourname.wav` (or `.mp3`/`.flac`/`.m4a`/`.ogg`) here.
+2. Run with `--voice yourname`. The transcript is derived automatically.
 
-The `chris.wav` shipped in this repo has its transcript **not** committed yet —
-author `voices/chris.txt` before running TTS, or point `--voice` at a voice you
-have transcribed.
+Best results come from 5–30s of clean, single-speaker speech with minimal
+background noise and no music.

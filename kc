@@ -161,12 +161,11 @@ def _doctor() -> None:
     print(f"ComfyUI dir:   {config.COMFY_DIR}  {'OK' if config.COMFY_DIR.exists() else 'MISSING'}")
     gguf = config.COMFY_DIR / "models" / "diffusion_models" / "flux-2-klein-4b-Q4_K_M.gguf"
     print(f"FLUX.2-klein:  {gguf}  {'OK' if gguf.exists() else 'MISSING (run scripts/fetch_models.py)'}")
-    print(f"TTS engine:    '{config.F5_BIN}' on PATH = {shutil.which(config.F5_BIN) is not None} "
-          f"(fallback: f5-tts python pkg)")
+    print(f"TTS engine:    Qwen3-TTS via mlx-audio ({config.QWEN3_MODEL_ID})")
+    print(f"  mlx-audio:   {'installed' if _pkg_ok('mlx_audio') else 'MISSING (pip install mlx-audio)'}")
     voice = config.VOICES / f"{config.DEFAULT_VOICE}.wav"
-    vt = config.VOICES / f"{config.DEFAULT_VOICE}.txt"
-    print(f"default voice: {voice} {'OK' if voice.exists() else 'MISSING'};  "
-          f"transcript {vt} {'OK' if vt.exists() else 'MISSING'}")
+    print(f"default voice: {voice} {'OK' if voice.exists() else 'MISSING'} "
+          f"(transcript auto-derived by whisper; no .txt needed)")
     print(f"LLM (gemma4): {'OK' if llm_is_up() else 'not running (manual-script mode works)'}")
     print(f"episodes dir: {config.EPISODES}")
 
@@ -178,6 +177,11 @@ def llm_is_up() -> bool:
         return True
     except Exception:
         return False
+
+
+def _pkg_ok(name: str) -> bool:
+    import importlib.util
+    return importlib.util.find_spec(name) is not None
 
 
 if __name__ == "__main__":

@@ -27,13 +27,14 @@ LLM_URL = f"http://{LLM_HOST}:{LLM_PORT}"
 LLM_CTX = 8192
 LLM_NGL = 99
 
-# --- TTS (F5TTS-MLX, via speech-swift CLI) — server-less, invoked as a subprocess ---
-# `speech` is the speech-swift CLI. If it is not on PATH, tts.py falls back to the
-# pip-installable `f5-tts` package (Apache-2.0). See scripts/install_deps.sh.
-F5_BIN = "speech"
-F5_MODEL_DIR = MODELS / "F5TTS-v1-Base-MLX-fp16"
-F5_FALLBACK_PKG = "f5_tts"          # module used by the python fallback
-DEFAULT_VOICE = "chris"            # resolves voices/chris.wav + voices/chris.txt
+# --- TTS (Qwen3-TTS via mlx-audio) — server-less, in-process on Apple Silicon ---
+# Qwen3-TTS is an in-context-learning voice-cloning model. tts.py drives it
+# through the `mlx-audio` package (MLX, Apple-Silicon). It needs a reference
+# clip (voices/<name>.wav) plus the whisper-transcribed transcript of that clip;
+# it speaks any text in that voice. No long-lived TTS server, no manual .txt.
+QWEN3_MODEL_ID = "mlx-community/Qwen3-TTS-12Hz-1.7B-Base-4bit"
+QWEN3_REF_STT = "base"            # faster-whisper model for ref transcription
+DEFAULT_VOICE = "chris"            # resolves voices/chris.wav (full clip)
 
 # --- Images (ComfyUI + FLUX.2-klein GGUF) — ComfyUI is auto-launched if needed ---
 COMFY_DIR = PROJECTS / "image" / "ComfyUI"

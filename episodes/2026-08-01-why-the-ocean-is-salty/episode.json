@@ -10,7 +10,7 @@
       "image_prompt": "wide establishing shot: The ocean tastes like tears for a reason. cinematic editorial photograph, vertical 9:16 composition, shot on 35mm, shallow depth of field, moody directional window light, desaturated teal and amber palette, film grain, high detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
       "image": "images/b01.png",
       "audio_start": 0.0,
-      "audio_end": 3.46,
+      "audio_end": 4.64,
       "motion": "in"
     },
     {
@@ -18,8 +18,8 @@
       "text": "Rivers carry a pinch of salt from every rock they touch.",
       "image_prompt": "medium shot: Rivers carry a pinch of salt from every rock they touch. cinematic editorial photograph, vertical 9:16 composition, shot on 35mm, shallow depth of field, moody directional window light, desaturated teal and amber palette, film grain, high detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
       "image": "images/b02.png",
-      "audio_start": 3.46,
-      "audio_end": 9.34,
+      "audio_start": 4.64,
+      "audio_end": 8.06,
       "motion": "in"
     },
     {
@@ -27,8 +27,8 @@
       "text": "Over billions of years that pinch added up.",
       "image_prompt": "close-up detail: Over billions of years that pinch added up. cinematic editorial photograph, vertical 9:16 composition, shot on 35mm, shallow depth of field, moody directional window light, desaturated teal and amber palette, film grain, high detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
       "image": "images/b03.png",
-      "audio_start": 9.34,
-      "audio_end": 12.12,
+      "audio_start": 8.06,
+      "audio_end": 11.2,
       "motion": "in"
     },
     {
@@ -36,8 +36,8 @@
       "text": "But the ocean never got saltier \u2014 something balances it.",
       "image_prompt": "over-the-shoulder angle: But the ocean never got saltier \u2014 something balances it. cinematic editorial photograph, vertical 9:16 composition, shot on 35mm, shallow depth of field, moody directional window light, desaturated teal and amber palette, film grain, high detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
       "image": "images/b04.png",
-      "audio_start": 12.12,
-      "audio_end": 17.06,
+      "audio_start": 11.2,
+      "audio_end": 15.06,
       "motion": "in"
     },
     {
@@ -45,8 +45,8 @@
       "text": "Salt flats and seabed clay quietly trap the excess.",
       "image_prompt": "low-angle heroic framing: Salt flats and seabed clay quietly trap the excess. cinematic editorial photograph, vertical 9:16 composition, shot on 35mm, shallow depth of field, moody directional window light, desaturated teal and amber palette, film grain, high detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
       "image": "images/b05.png",
-      "audio_start": 17.06,
-      "audio_end": 21.42,
+      "audio_start": 15.06,
+      "audio_end": 18.76,
       "motion": "in"
     },
     {
@@ -54,8 +54,8 @@
       "text": "The sea is a closed loop, not a growing one.",
       "image_prompt": "extreme close-up: The sea is a closed loop, not a growing one. cinematic editorial photograph, vertical 9:16 composition, shot on 35mm, shallow depth of field, moody directional window light, desaturated teal and amber palette, film grain, high detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
       "image": "images/b06.png",
-      "audio_start": 21.42,
-      "audio_end": 25.24,
+      "audio_start": 18.76,
+      "audio_end": 21.8,
       "motion": "in"
     }
   ],
@@ -68,331 +68,391 @@
       "word": "The",
       "key": "the",
       "start": 0.0,
-      "end": 0.12
+      "end": 1.16
     },
     {
       "word": "ocean",
       "key": "ocean",
-      "start": 0.12,
-      "end": 0.4
+      "start": 1.16,
+      "end": 1.56
     },
     {
       "word": "tastes",
       "key": "tastes",
-      "start": 0.4,
-      "end": 0.74
+      "start": 1.56,
+      "end": 1.94
     },
     {
       "word": "like",
       "key": "like",
-      "start": 0.74,
-      "end": 1.06
+      "start": 1.94,
+      "end": 2.24
     },
     {
       "word": "tears",
       "key": "tears",
-      "start": 1.06,
-      "end": 1.3
+      "start": 2.24,
+      "end": 2.62
     },
     {
       "word": "for",
       "key": "for",
-      "start": 1.3,
-      "end": 1.54
+      "start": 2.62,
+      "end": 3.08
     },
     {
       "word": "a",
       "key": "a",
-      "start": 1.54,
-      "end": 1.66
+      "start": 3.08,
+      "end": 3.26
     },
     {
       "word": "reason.",
       "key": "reason",
-      "start": 1.66,
-      "end": 2.02
+      "start": 3.26,
+      "end": 3.7
     },
     {
       "word": "Rivers",
       "key": "rivers",
-      "start": 3.46,
-      "end": 3.46
+      "start": 4.64,
+      "end": 4.64
     },
     {
       "word": "carry",
       "key": "carry",
-      "start": 3.46,
-      "end": 3.98
+      "start": 4.64,
+      "end": 5.08
     },
     {
       "word": "a",
       "key": "a",
-      "start": 3.98,
-      "end": 5.0
+      "start": 5.08,
+      "end": 5.3
     },
     {
       "word": "pinch",
       "key": "pinch",
-      "start": 5.0,
-      "end": 5.18
+      "start": 5.3,
+      "end": 5.48
     },
     {
       "word": "of",
       "key": "of",
-      "start": 5.18,
-      "end": 5.34
+      "start": 5.48,
+      "end": 5.7
     },
     {
       "word": "salt",
       "key": "salt",
-      "start": 5.34,
-      "end": 5.6
+      "start": 5.7,
+      "end": 6.02
     },
     {
       "word": "from",
       "key": "from",
-      "start": 5.6,
-      "end": 5.8
+      "start": 6.02,
+      "end": 6.34
     },
     {
       "word": "every",
       "key": "every",
-      "start": 5.8,
-      "end": 6.1
+      "start": 6.34,
+      "end": 6.6
     },
     {
       "word": "rock",
       "key": "rock",
-      "start": 6.1,
-      "end": 6.36
+      "start": 6.6,
+      "end": 6.86
     },
     {
       "word": "they",
       "key": "they",
-      "start": 6.36,
-      "end": 6.6
+      "start": 6.86,
+      "end": 7.08
     },
     {
       "word": "touch.",
       "key": "touch",
-      "start": 6.6,
-      "end": 6.96
+      "start": 7.08,
+      "end": 7.46
     },
     {
       "word": "Over",
       "key": "over",
-      "start": 9.34,
-      "end": 9.7
+      "start": 8.06,
+      "end": 8.3
     },
     {
       "word": "billions",
       "key": "billions",
-      "start": 9.7,
-      "end": 10.02
+      "start": 8.3,
+      "end": 8.68
     },
     {
       "word": "of",
       "key": "of",
-      "start": 10.02,
-      "end": 10.4
+      "start": 8.68,
+      "end": 9.04
     },
     {
-      "word": "years",
+      "word": "years,",
       "key": "years",
-      "start": 10.4,
-      "end": 10.76
+      "start": 9.04,
+      "end": 9.32
     },
     {
       "word": "that",
       "key": "that",
-      "start": 10.76,
-      "end": 11.14
+      "start": 9.32,
+      "end": 9.64
     },
     {
       "word": "pinch",
       "key": "pinch",
-      "start": 11.14,
-      "end": 11.42
+      "start": 9.64,
+      "end": 9.98
     },
     {
       "word": "added",
       "key": "added",
-      "start": 11.42,
-      "end": 11.8
+      "start": 9.98,
+      "end": 10.34
     },
     {
       "word": "up.",
       "key": "up",
-      "start": 11.8,
-      "end": 12.04
+      "start": 10.34,
+      "end": 10.74
     },
     {
       "word": "But",
       "key": "but",
-      "start": 12.12,
-      "end": 12.24
+      "start": 11.2,
+      "end": 11.4
     },
     {
       "word": "the",
       "key": "the",
-      "start": 12.24,
-      "end": 12.34
+      "start": 11.4,
+      "end": 11.52
     },
     {
       "word": "ocean",
       "key": "ocean",
-      "start": 12.34,
-      "end": 12.58
+      "start": 11.52,
+      "end": 11.86
     },
     {
       "word": "never",
       "key": "never",
-      "start": 12.58,
-      "end": 12.86
+      "start": 11.86,
+      "end": 12.14
     },
     {
       "word": "got",
       "key": "got",
-      "start": 12.86,
-      "end": 13.12
+      "start": 12.14,
+      "end": 12.38
     },
     {
       "word": "saltier.",
       "key": "saltier",
-      "start": 13.12,
-      "end": 13.78
+      "start": 12.38,
+      "end": 13.06
     },
     {
       "word": "Something",
       "key": "something",
-      "start": 14.6,
-      "end": 15.02
+      "start": 13.58,
+      "end": 13.9
     },
     {
       "word": "balances",
       "key": "balances",
-      "start": 15.02,
-      "end": 15.7
+      "start": 13.9,
+      "end": 14.48
     },
     {
       "word": "it.",
       "key": "it",
-      "start": 15.7,
-      "end": 16.16
+      "start": 14.48,
+      "end": 14.84
     },
     {
       "word": "Salt",
       "key": "salt",
-      "start": 17.06,
-      "end": 17.06
+      "start": 15.06,
+      "end": 15.2
     },
     {
       "word": "flats",
       "key": "flats",
-      "start": 17.06,
-      "end": 17.58
+      "start": 15.2,
+      "end": 15.64
     },
     {
       "word": "and",
       "key": "and",
-      "start": 17.58,
-      "end": 17.98
+      "start": 15.64,
+      "end": 15.98
     },
     {
-      "word": "seaweed",
-      "key": "seaweed",
-      "start": 17.98,
-      "end": 18.62
+      "word": "seabed",
+      "key": "seabed",
+      "start": 15.98,
+      "end": 16.48
     },
     {
       "word": "clay",
       "key": "clay",
-      "start": 18.62,
-      "end": 19.1
+      "start": 16.48,
+      "end": 16.9
     },
     {
       "word": "quietly",
       "key": "quietly",
-      "start": 19.1,
-      "end": 20.24
+      "start": 16.9,
+      "end": 17.36
     },
     {
-      "word": "trap",
-      "key": "trap",
-      "start": 20.24,
-      "end": 20.68
+      "word": "trapped",
+      "key": "trapped",
+      "start": 17.36,
+      "end": 17.82
     },
     {
       "word": "the",
       "key": "the",
-      "start": 20.68,
-      "end": 20.94
+      "start": 17.82,
+      "end": 18.02
     },
     {
       "word": "excess.",
       "key": "excess",
-      "start": 20.94,
-      "end": 21.42
+      "start": 18.02,
+      "end": 18.44
     },
     {
       "word": "The",
       "key": "the",
-      "start": 21.42,
-      "end": 22.28
+      "start": 18.76,
+      "end": 18.92
     },
     {
       "word": "sea",
       "key": "sea",
-      "start": 22.28,
-      "end": 22.66
+      "start": 18.92,
+      "end": 19.18
     },
     {
       "word": "is",
       "key": "is",
-      "start": 22.66,
-      "end": 23.08
+      "start": 19.18,
+      "end": 19.46
     },
     {
       "word": "a",
       "key": "a",
-      "start": 23.08,
-      "end": 23.24
+      "start": 19.46,
+      "end": 19.62
     },
     {
       "word": "closed",
       "key": "closed",
-      "start": 23.24,
-      "end": 23.5
+      "start": 19.62,
+      "end": 20.0
     },
     {
       "word": "loop,",
       "key": "loop",
-      "start": 23.5,
-      "end": 23.88
+      "start": 20.0,
+      "end": 20.44
     },
     {
       "word": "not",
       "key": "not",
-      "start": 24.1,
-      "end": 24.3
+      "start": 20.62,
+      "end": 20.86
     },
     {
       "word": "a",
       "key": "a",
-      "start": 24.3,
-      "end": 24.56
+      "start": 20.86,
+      "end": 21.12
     },
     {
       "word": "growing",
       "key": "growing",
-      "start": 24.56,
-      "end": 24.92
+      "start": 21.12,
+      "end": 21.48
     },
     {
       "word": "one.",
       "key": "one",
-      "start": 24.92,
-      "end": 25.24
+      "start": 21.48,
+      "end": 21.8
+    },
+    {
+      "word": "The",
+      "key": "the",
+      "start": 21.8,
+      "end": 21.92
+    },
+    {
+      "word": "ocean",
+      "key": "ocean",
+      "start": 21.92,
+      "end": 21.92
+    },
+    {
+      "word": "is",
+      "key": "is",
+      "start": 21.92,
+      "end": 22.06
+    },
+    {
+      "word": "a",
+      "key": "a",
+      "start": 22.06,
+      "end": 22.06
+    },
+    {
+      "word": "closed",
+      "key": "closed",
+      "start": 22.06,
+      "end": 22.14
+    },
+    {
+      "word": "loop,",
+      "key": "loop",
+      "start": 22.14,
+      "end": 22.14
+    },
+    {
+      "word": "not",
+      "key": "not",
+      "start": 22.14,
+      "end": 22.14
+    },
+    {
+      "word": "a",
+      "key": "a",
+      "start": 22.14,
+      "end": 22.14
+    },
+    {
+      "word": "growing",
+      "key": "growing",
+      "start": 22.14,
+      "end": 22.14
+    },
+    {
+      "word": "one.",
+      "key": "one",
+      "start": 22.14,
+      "end": 22.14
     }
   ],
   "final": "2026-08-01-why-the-ocean-is-salty.mp4"

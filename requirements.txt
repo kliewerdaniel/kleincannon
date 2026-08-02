@@ -4,8 +4,8 @@ faster-whisper>=1.0.0
 Pillow>=10.0
 numpy>=1.24
 
-# TTS fallback engine (Apache-2.0). The primary F5-TTS engine is the MLX Swift
-# bundle `aufklarer/F5TTS-v1-Base-MLX-fp16`, driven by the `speech` CLI from
-# speech-swift (a Swift package, not pip-installable). If `speech` is not on
-# PATH, tts.py falls back to this pure-Python package. See scripts/install_deps.sh.
-f5-tts>=1.0.0
+# TTS engine: Qwen3-TTS (In-Context-Learning voice cloning) on Apple Silicon via
+# MLX. `mlx-audio` pulls in mlx / mlx-lm / transformers and downloads the
+# 4-bit model `mlx-community/Qwen3-TTS-12Hz-1.7B-Base-4bit` (~1.5 GB) on first use.
+# Reference-clip transcription uses faster-whisper (already a dependency above).
+mlx-audio>=0.4.2
