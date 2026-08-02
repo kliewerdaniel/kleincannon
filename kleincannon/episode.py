@@ -24,10 +24,17 @@ def style_for_id(episode_id: str) -> dict:
     if not cat:
         return {"name": "Default", "palette": "",
                 "suffix": getattr(config, "STYLE_SUFFIX", "")}
+    # Constrain the deterministic auto pick to safe (photographic / cinematic)
+    # styles only. Lifestyle / fashion looks ("Vivid Editorial", "Soft Pastel")
+    # render as model/editorial shots that don't fit a reality-check explainer,
+    # so they're reserved for an explicit --style choice and never auto-selected.
+    safe = [e for e in cat if e["name"] in getattr(config, "SAFE_AUTO_STYLES", set())]
+    if not safe:
+        safe = cat
     stable = int.from_bytes(
         __import__("hashlib").md5(episode_id.encode()).digest()[:8], "big")
-    idx = stable % len(cat)
-    return dict(cat[idx])
+    idx = stable % len(safe)
+    return dict(safe[idx])
 
 
 def resolve_style(style: str | None) -> dict:
@@ -86,6 +93,8 @@ class Episode:
     voice_audio: str | None = None    # audio/voice.wav
     words: list[dict] = field(default_factory=list)   # whisper word timestamps
     final: str | None = None
+    image_workflow: str | None = None  # workflow file used for the last image render
+                                        # (so a provider swap / config change forces a re-render)
 
     # ---- paths ----
     @property

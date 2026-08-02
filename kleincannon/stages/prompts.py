@@ -69,28 +69,50 @@ _DANGER = re.compile(
     r"win|won|winning|prize|payout|fortune|millionaire|coin|cash|money|banknote|"
     r"bank|bill|dollar|cent|price|cost|pay|paid|tax|taxes|slip|scratch|"
     r"million|billion|thousand|hundred|math|equation|score|statistic|data|"
+    r"map|maps|atlas|globe|world|country|countries|united states|continent|"
+    r"forecast|prediction|"
     r"second|seconds|minute|minutes|hour|hours|year|years|day|days|"
     r"imagine|imagining|hoping|hope|lost|never|impossible|vain)\b",
     re.IGNORECASE,
 )
 
 # Text-free, emotion-led abstract scenes (vary by beat index for shot variety).
+# These deliberately NEVER echo the beat's literal nouns — the image model
+# renders any concrete subject (a map of the US, a coin, a ticket) literally and
+# badly, so the no-LLM fallback sticks to atmospheric, topic-neutral cinematic
+# shots that fit ANY explainer.
 _ABSTRACT = [
-    "a lone figure at a dim counter, a quiet moment before a decision",
-    "a hand pausing, a look of dawning disbelief settling across the face",
-    "a coin caught mid-flip against a dark backdrop, frozen in motion",
-    "a person watching a long endless queue, the futility of sheer scale",
-    "a towering stack of papers shrinking as a hand sweeps most of it away",
-    "a close face in low light, a brief flicker of hope fading into a quiet exhale",
-    "an empty chair by a rain-streaked window, the stillness after a choice",
-    "two open empty hands, palms up, a soft quiet realization",
+    "a vast open sky over a quiet horizon, a lone small figure in silhouette, still and watchful",
+    "a hand lifting toward a shaft of shifting light, a quiet moment of realization",
+    "moving water over dark rock, caught mid-flow with soft motion blur",
+    "a person standing at a window, looking out at an enormous changing sky",
+    "a long empty road fading into haze, the overwhelming scale of distance",
+    "a close face in low light, a slow breath, a quiet exhale",
+    "an empty chair beside a rain-streaked window, the stillness after a decision",
+    "two open hands, palms up, a soft quiet understanding",
 ]
 
 
+# Styles the deterministic "auto" pick is allowed to choose. Lifestyle / fashion
+# looks ("Vivid Editorial", "Soft Pastel") render as model/editorial shots that
+# don't fit a reality-check explainer, so they're reserved for an EXPLICIT
+# --style choice (or a bandit recommendation that sets ep.style directly) and
+# never auto-selected. The canonical set lives in config.SAFE_AUTO_STYLES; the
+# helper below reads it so prompts.py and episode.py never disagree.
+def _safe_auto_styles():
+    return set(getattr(config, "SAFE_AUTO_STYLES", []))
+
+
 def _fallback_prompts(ep: Episode) -> dict[str, str]:
-    """Deterministic prompts derived from the beat text — used when the LLM is
-    unavailable or too slow. No external call, so the pipeline never soft-locks.
-    Numeric / money / odds beats are rendered abstractly to keep text out."""
+    """Deterministic prompts used when the LLM is unavailable or too slow.
+
+    The LLM's job is to "show the FEELING of the beat, not a literal
+    illustration of its words." With no LLM we cannot do that per-topic, so we
+    map every beat to a topic-neutral abstract cinematic scene — never the
+    beat's literal nouns, which ZImage Turbo would otherwise render as a map,
+    a coin, or a ticket of garbled text. The style suffix (always a
+    photographic look in the auto path) supplies the consistent mood.
+    """
     shots = [
         "wide establishing shot",
         "medium shot",
@@ -104,22 +126,25 @@ def _fallback_prompts(ep: Episode) -> dict[str, str]:
     out = {}
     for i, b in enumerate(ep.beats):
         angle = shots[i % len(shots)]
-        if _DANGER.search(b.text) or _NUMERIC.search(b.text):
-            out[b.id] = f"{angle}: {_ABSTRACT[i % len(_ABSTRACT)]}"
-            continue
-        subject = _TEXT_TRIGGERS.sub(" ", b.text)
-        subject = re.sub(r"\s{2,}", " ", subject).strip().rstrip(".")
-        subject = re.sub(r"^(the|a|an|and|but|or|so)\b", "", subject,
-                         flags=re.I).strip()
-        subject = subject or f"a person reacting to the moment, beat {i + 1}"
-        out[b.id] = f"{angle}: {subject}"
+        out[b.id] = f"{angle}: {_ABSTRACT[i % len(_ABSTRACT)]}"
     return out
 
 
 def _auto_style_name(episode_id: str) -> str:
-    """Name of the catalog style a topic id deterministically maps to."""
+    """Name of the catalog style a topic id deterministically maps to.
+
+    The deterministic pick is constrained to SAFE_AUTO_STYLES (photographic /
+    cinematic looks that fit a reality-check explainer); lifestyle/fashion
+    styles like "Vivid Editorial" are never auto-selected — they're reserved for
+    an explicit --style choice.
+    """
     from ..episode import style_for_id
-    return style_for_id(episode_id).get("name", "auto")
+    safe = _safe_auto_styles()
+    base = style_for_id(episode_id).get("name", "Moody Cinematic")
+    if base in safe:
+        return base
+    # Fall back to the first safe style deterministically (stable per topic).
+    return next(iter(safe)) if safe else "Moody Cinematic"
 
 
 def _resolve_active_style(ep: Episode, style_arg: str) -> dict:
@@ -140,8 +165,9 @@ def _resolve_active_style(ep: Episode, style_arg: str) -> dict:
     if arg and arg.lower() not in ("auto",):
         return resolve_style(arg)
     # auto: keep a real catalog name resolved on a prior run (consistency);
-    # otherwise derive a fresh per-topic look from the catalog.
-    if ep.style_name in catalog_names:
+    # unless it's a lifestyle/fashion look (Vivid Editorial, Soft Pastel) that
+    # should never be auto-reused — re-derive a safe cinematic look instead.
+    if ep.style_name in catalog_names and ep.style_name in _safe_auto_styles():
         for entry in config.STYLE_CATALOG:
             if entry["name"] == ep.style_name:
                 return dict(entry)

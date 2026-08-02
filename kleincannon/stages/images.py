@@ -35,20 +35,38 @@ def run(episode_id: str, fast: bool = False, force: bool = False,
     comfy.ensure_server()
 
     workflow = comfy.load_workflow()
+    workflow_name = config.COMFY_WORKFLOW.name  # e.g. zimageturbo.json
     w, h = _dims(fast)
     print(f"[images] ZImage Turbo  {w}x{h}  fast={fast}  "
           f"(native {config.GEN_WIDTH}x{config.GEN_HEIGHT})")
+
+    # A provider / workflow change means stale images from a previous run must be
+    # re-rendered even when --force isn't set (otherwise a `kc all` reuses old
+    # FLUX.2-klein images after a swap to ZImage Turbo). The orchestrator's
+    # `kc all` path also passes force=True so every beat is always fresh.
+    stale_provider = (ep.image_workflow is not None
+                      and ep.image_workflow != workflow_name)
 
     for i, beat in enumerate(ep.beats):
         if not beat.image_prompt:
             continue
         dest = ep.images_dir / f"{beat.id}.png"
-        if dest.exists() and not force:
+        if dest.exists() and not force and not stale_provider:
             print(f"  {beat.id}  skip (exists)")
             beat.image = f"images/{beat.id}.png"
             continue
+        if dest.exists() and (force or stale_provider):
+            reason = "forced" if force else f"workflow changed ({ep.image_workflow} -> {workflow_name})"
+            print(f"  {beat.id}  re-render ({reason})")
 
         s = seed if seed is not None else 1000 + i * 137
+        if force or stale_provider:
+            # A forced re-render must NOT reuse the deterministic cache seed, or
+            # ComfyUI's execution cache would serve the previous render for this
+            # (graph + seed) pair instead of actually recomputing. Use a fresh
+            # random seed so the cache can never hit.
+            import random
+            s = random.randint(1, 2_147_483_646)
         print(f"  {beat.id}  rendering (seed {s}) …")
         # ComfyUI is run by the user (COMFY_AUTO_LAUNCH=False): one long-lived
         # server on :8188, never relaunched between beats (relaunching can poison
@@ -80,6 +98,7 @@ def run(episode_id: str, fast: bool = False, force: bool = False,
         beat.image = f"images/{beat.id}.png"
         print(f"  {beat.id}  -> {dest.name}")
 
+    ep.image_workflow = workflow_name
     ep.save()
     done = sum(1 for b in ep.beats if (ep.images_dir / f"{b.id}.png").exists())
     print(f"[images] {done}/{len(ep.beats)} beats rendered")

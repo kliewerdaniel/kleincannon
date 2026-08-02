@@ -265,7 +265,7 @@ def main(argv=None) -> int:
         tts_stage.run(eid, voice=args.voice, speed=args.speed)
         align_stage.run(eid)
         prompts_stage.run(eid, style_suffix=args.style)
-        images_stage.run(eid, fast=args.fast)
+        images_stage.run(eid, fast=args.fast, force=True)
         captions_stage.run(eid)
         assemble_stage.run(eid)
         print(f"\nDONE -> episodes/{eid}/{eid}.mp4")

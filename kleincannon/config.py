@@ -81,6 +81,16 @@ STYLE_CATALOG = [
                "soft focus, warm sepia cast, absolutely no text, no writing, no signage, no readable "
                "screens, no numbers, no logos"},
 ]
+
+# Styles the deterministic "auto" pick is allowed to choose. Lifestyle / fashion
+# looks ("Vivid Editorial", "Soft Pastel") render as model/editorial shots that
+# don't fit a reality-check explainer, so they're reserved for an EXPLICIT
+# --style choice (or a bandit recommendation that sets ep.style directly) and
+# never auto-selected. episode.style_for_id() is constrained to this set.
+SAFE_AUTO_STYLES = [
+    "Moody Cinematic", "Warm Documentary", "Noir",
+    "Cyberpunk Neon", "Vintage Faded",
+]
 # Override keys (runtime-set via config.push_overrides / web form). Defined here
 # so push_overrides finds them as real module attributes.
 PROMPT_STYLE = "auto"              # "auto" => derive deterministically per episode

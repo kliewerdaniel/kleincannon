@@ -7,7 +7,7 @@
     {
       "id": "b01",
       "text": "This winter, government forecasters say a Super El Ni\u00f1o could rewrite the season across the United States.",
-      "image_prompt": "wide establishing shot: This winter, government forecasters say a Super El Ni\u00f1o could rewrite the season across the United States. vibrant fashion-editorial photograph, vertical 9:16, bold saturated color, glossy studio light, punchy contrast, sharp detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
+      "image_prompt": "wide establishing shot: a vast open sky over a quiet horizon, a lone small figure in silhouette, still and watchful. warm natural documentary photograph, vertical 9:16, available light, golden hour, 35mm film look, gentle film grain, earthy amber and cream palette, high detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
       "image": "images/b01.png",
       "audio_start": 0.0,
       "audio_end": 7.04,
@@ -16,7 +16,7 @@
     {
       "id": "b02",
       "text": "An El Ni\u00f1o means the Pacific's warm water slides east, and that quietly shoves the jet stream into a new pattern.",
-      "image_prompt": "medium shot: El Ni\u00f1o means the Pacific's warm water slides east, and that quietly shoves the jet stream into a new pattern. vibrant fashion-editorial photograph, vertical 9:16, bold saturated color, glossy studio light, punchy contrast, sharp detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
+      "image_prompt": "medium shot: a hand lifting toward a shaft of shifting light, a quiet moment of realization. warm natural documentary photograph, vertical 9:16, available light, golden hour, 35mm film look, gentle film grain, earthy amber and cream palette, high detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
       "image": "images/b02.png",
       "audio_start": 7.04,
       "audio_end": 14.64,
@@ -25,7 +25,7 @@
     {
       "id": "b03",
       "text": "For the southern half of the country, that often means a warmer, drier winter than you would ever expect.",
-      "image_prompt": "close-up detail: For the southern half of the country, that often means a warmer, drier winter than you would ever expect. vibrant fashion-editorial photograph, vertical 9:16, bold saturated color, glossy studio light, punchy contrast, sharp detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
+      "image_prompt": "close-up detail: moving water over dark rock, caught mid-flow with soft motion blur. warm natural documentary photograph, vertical 9:16, available light, golden hour, 35mm film look, gentle film grain, earthy amber and cream palette, high detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
       "image": "images/b03.png",
       "audio_start": 14.64,
       "audio_end": 21.28,
@@ -34,7 +34,7 @@
     {
       "id": "b04",
       "text": "But the northern tier can get the opposite, a wetter, snowier, more relentless stretch of storms.",
-      "image_prompt": "over-the-shoulder angle: the northern tier can get the opposite, a wetter, snowier, more relentless stretch of storms. vibrant fashion-editorial photograph, vertical 9:16, bold saturated color, glossy studio light, punchy contrast, sharp detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
+      "image_prompt": "over-the-shoulder angle: a person standing at a window, looking out at an enormous changing sky. warm natural documentary photograph, vertical 9:16, available light, golden hour, 35mm film look, gentle film grain, earthy amber and cream palette, high detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
       "image": "images/b04.png",
       "audio_start": 21.28,
       "audio_end": 27.14,
@@ -43,7 +43,7 @@
     {
       "id": "b05",
       "text": "The twist is that an El Ni\u00f1o winter does not mean the same thing everywhere, and it is a tilt in the odds, not a promise.",
-      "image_prompt": "low-angle heroic framing: a towering stack of papers shrinking as a hand sweeps most of it away. vibrant fashion-editorial photograph, vertical 9:16, bold saturated color, glossy studio light, punchy contrast, sharp detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
+      "image_prompt": "low-angle heroic framing: a long empty road fading into haze, the overwhelming scale of distance. warm natural documentary photograph, vertical 9:16, available light, golden hour, 35mm film look, gentle film grain, earthy amber and cream palette, high detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
       "image": "images/b05.png",
       "audio_start": 27.14,
       "audio_end": 36.34,
@@ -52,7 +52,7 @@
     {
       "id": "b06",
       "text": "So before you trust the forecast on your phone, remember the ocean already placed its bet, and the atmosphere is only playing it out.",
-      "image_prompt": "extreme close-up: a close face in low light, a brief flicker of fading into a quiet exhale. vibrant fashion-editorial photograph, vertical 9:16, bold saturated color, glossy studio light, punchy contrast, sharp detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
+      "image_prompt": "extreme close-up: a close face in low light, a slow breath, a quiet exhale. warm natural documentary photograph, vertical 9:16, available light, golden hour, 35mm film look, gentle film grain, earthy amber and cream palette, high detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
       "image": "images/b06.png",
       "audio_start": 36.34,
       "audio_end": 44.34,
@@ -61,9 +61,9 @@
   ],
   "voice": "chris",
   "speed": 1.12,
-  "style": "Vivid Editorial",
-  "style_name": "Vivid Editorial",
-  "style_suffix": "vibrant fashion-editorial photograph, vertical 9:16, bold saturated color, glossy studio light, punchy contrast, sharp detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
+  "style": "Warm Documentary",
+  "style_name": "Warm Documentary",
+  "style_suffix": "warm natural documentary photograph, vertical 9:16, available light, golden hour, 35mm film look, gentle film grain, earthy amber and cream palette, high detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
   "cta": "",
   "voice_audio": "audio/voice.wav",
   "words": [
@@ -806,5 +806,6 @@
       "end": 44.34
     }
   ],
-  "final": "2026-08-02-super-el-nino-winter.mp4"
+  "final": "2026-08-02-super-el-nino-winter.mp4",
+  "image_workflow": "zimageturbo.json"
 }
