@@ -19,6 +19,7 @@ Most stages take -e <episode-id>; omit it to use the most recently modified epis
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -77,6 +78,26 @@ def main(argv=None) -> int:
     sp = sub.add_parser("sheet"); add_ep(sp)
     sp = sub.add_parser("status"); add_ep(sp)
     sp = sub.add_parser("doctor")
+
+    # ---- learning subsystem (autonomous optimization) ----
+    lp = sub.add_parser("learn", help="autonomous learning / optimization engine")
+    learn_sub = lp.add_subparsers(dest="learn_cmd", required=True)
+    linit = learn_sub.add_parser("init", help="create learn config + DB, no network")
+    lrun = learn_sub.add_parser("cycle", help="prepare candidates + publish best (one experiment)")
+    lrun.add_argument("-e", "--episode", required=True)
+    lrun.add_argument("--niche", default="")
+    lrun.add_argument("--hashtags", default="", help="comma-separated")
+    lrun.add_argument("--caption", default="")
+    lrun.add_argument("--privacy", default=None, help="SELF_ONLY | PUBLIC_TO_ALL")
+    lrun.add_argument("--parent", default=None, help="parent experience id (lineage)")
+    lrun.add_argument("--no-train", action="store_true")
+    lharv = learn_sub.add_parser("harvest", help="poll due metric snapshots for all posted")
+    ltrain = learn_sub.add_parser("train", help="retrain bandit from full history")
+    lstatus = learn_sub.add_parser("status", help="engine + experience summary")
+    lrec = learn_sub.add_parser("recommend", help="best next generation config for an episode")
+    lrec.add_argument("-e", "--episode", required=True)
+    lhist = learn_sub.add_parser("history", help="models + experiments")
+    lreset = learn_sub.add_parser("reset", help="wipe bandit model (keep DB)")
     args = p.parse_args(argv)
 
     if args.cmd == "new":
@@ -120,6 +141,57 @@ def main(argv=None) -> int:
               f"final={'yes' if ep.final else 'no'}")
     elif args.cmd == "doctor":
         _doctor()
+    elif args.cmd == "learn":
+        from kleincannon.learn import agency, harvester as hv, trainer as tr, engine as eng
+        from kleincannon.learn import learn_config
+        if args.learn_cmd == "init":
+            learn_config.save()
+            dbg = __import__("kleincannon.learn.db", fromlist=["open_db"]).open_db()
+            print("learn subsystem initialised:")
+            print(f"  config: {learn_config._path}")
+            print(f"  db:     {learn_config.db_path}")
+            print(f"  platform: {learn_config.platform} "
+                  f"({'authenticated' if learn_config.token_path and __import__('pathlib').Path(learn_config.token_path).exists() else 'mock/local'})")
+            print(f"  reward preset: {learn_config.active_reward_preset}")
+            dbg.close()
+        elif args.learn_cmd == "cycle":
+            hashtags = [h.strip() for h in args.hashtags.split(",") if h.strip()]
+            out = agency.run_cycle(
+                args.episode, niche=args.niche, hashtags=hashtags,
+                caption=args.caption, parent_id=args.parent, privacy=args.privacy,
+                auto_train=not args.no_train)
+            print(json.dumps(out, indent=2, default=str))
+        elif args.learn_cmd == "harvest":
+            out = hv.harvest_all()
+            print(json.dumps(out, indent=2, default=str))
+        elif args.learn_cmd == "train":
+            out = tr.train_from_history()
+            print(json.dumps(out, indent=2, default=str))
+        elif args.learn_cmd == "status":
+            print(json.dumps(agency.status(), indent=2, default=str))
+        elif args.learn_cmd == "recommend":
+            from kleincannon.learn import optimize
+            from kleincannon.episode import Episode
+            ep = Episode.load(args.episode)
+            cands = optimize.optimize(ep)
+            best = cands[0]
+            print(json.dumps({
+                "episode": args.episode,
+                "recommended_variation": best.get("variation"),
+                "predicted_reward": best.get("_predicted_reward"),
+                "uncertainty": best.get("_uncertainty"),
+                "top5": [{"variation": c.get("variation"),
+                          "predicted_reward": c.get("_predicted_reward")} for c in cands[:5]],
+            }, indent=2))
+        elif args.learn_cmd == "history":
+            out = tr.history()
+            print(json.dumps(out, indent=2, default=str))
+        elif args.learn_cmd == "reset":
+            p2 = __import__("pathlib").Path(learn_config.learn_dir) / "bandit_model.npz"
+            if p2.exists():
+                p2.unlink()
+            eng.reset_engine()
+            print("bandit model wiped (experience DB preserved).")
     elif args.cmd == "all":
         ep = None
         if args.manual_script.strip():

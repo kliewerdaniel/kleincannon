@@ -36,3 +36,8 @@ __pycache__/
 
 # OS
 .DS_Store
+
+# learning subsystem RUNTIME data (experience DB, trained models, OAuth token
+# — machine-local). NOTE: only the top-level learn/ data dir is ignored;
+# the SOURCE package kleincannon/learn/ must stay tracked.
+/learn/

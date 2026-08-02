@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>kleincannon — learning engine</title>
+<link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="brand">
+      <span class="logo">◣</span>
+      <div>
+        <h1>kleincannon · learning</h1>
+        <p class="tag">autonomous optimization engine</p>
+      </div>
+    </div>
+    <div class="services">
+      <a class="dot" href="/">← generator</a>
+      <span class="dot" id="platform-dot" title="active platform">platform</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>Engine status</h2>
+      <div id="engine" class="kv">loading…</div>
+    </section>
+
+    <section class="card">
+      <h2>Run an experiment (one cycle)</h2>
+      <p class="hint">Generates a population of candidate configs with the bandit, publishes the
+        best to the active platform, records the experience, and schedules metric harvesting.</p>
+      <label>Episode id
+        <input id="ep" placeholder="e.g. 2026-08-01-why-the-ocean-is-salty" />
+      </label>
+      <label>Niche / purpose
+        <input id="niche" placeholder="educate" />
+      </label>
+      <label>Hashtags (comma-separated)
+        <input id="tags" placeholder="ocean, science, shorts" />
+      </label>
+      <label>Caption (post, not burned in)
+        <input id="caption" placeholder="follow for part 2" />
+      </label>
+      <label>Privacy
+        <select id="privacy">
+          <option value="">default (SELF_ONLY)</option>
+          <option value="SELF_ONLY">SELF_ONLY</option>
+          <option value="PUBLIC_TO_ALL">PUBLIC_TO_ALL</option>
+        </select>
+      </label>
+      <div class="btn-row">
+        <button id="run" class="primary">Run cycle</button>
+        <button id="harvest">Harvest now</button>
+        <button id="train">Retrain</button>
+      </div>
+      <pre id="out" class="out">—</pre>
+    </section>
+
+    <section class="card">
+      <h2>Training history</h2>
+      <div id="history" class="kv">loading…</div>
+    </section>
+  </main>
+</div>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+
+async function refresh() {
+  try {
+    const st = await (await fetch("/api/learn/status")).json();
+    const eng = st.engine || {};
+    $("#engine").innerHTML = `
+      <div><b>platform</b> ${st.platform}</div>
+      <div><b>reward preset</b> ${st.active_reward_preset}</div>
+      <div><b>experiences</b> ${st.total_experiences} (posted ${st.posted}, chosen ${st.chosen})</div>
+      <div><b>best reward</b> ${st.best_reward}</div>
+      <div><b>best variation</b> ${st.best_variation ?? "—"}</div>
+      <div><b>bandit updates</b> ${eng.n_updates ?? 0}</div>
+      <div><b>exploration ε</b> ${eng.epsilon_now ?? "—"}</div>
+      <div><b>confidence</b> ${((eng.confidence ?? 0) * 100).toFixed(0)}%</div>
+      <div style="margin-top:8px"><b>top positive features</b>
+        <ul>${(eng.top_positive ?? []).map(([k, v]) => `<li>${k}: ${v}</li>`).join("")}</ul>
+      </div>
+      <div><b>top negative features</b>
+        <ul>${(eng.top_negative ?? []).map(([k, v]) => `<li>${k}: ${v}</li>`).join("")}</ul>
+      </div>`;
+    const plat = st.platform === "tiktok" ? "TikTok (real)" : "Mock (local)";
+    $("#platform-dot").textContent = plat;
+  } catch (e) { $("#engine").textContent = "error: " + e; }
+
+  try {
+    const h = await (await fetch("/api/learn/history")).json();
+    const exps = (h.experiments ?? []).slice(0, 12).map(e => `
+      <tr><td>#${e.id}</td><td>${e.dataset_size}</td><td>${e.reward_def}</td>
+          <td>${(e.accuracy * 100).toFixed(1)}%</td><td>${e.prediction_error}</td>
+          <td>${e.training_date}</td></tr>`).join("");
+    $("#history").innerHTML = `
+      <table class="tbl"><thead><tr><th>exp</th><th>data</th><th>reward</th>
+      <th>acc</th><th>MAE</th><th>trained</th></tr></thead><tbody>${exps || "<tr><td colspan=6>no models yet</td></tr>"}</tbody></table>`;
+  } catch (e) { $("#history").textContent = "error: " + e; }
+}
+
+async function postJSON(url, body) {
+  const r = await fetch(url, {method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: body ? JSON.stringify(body) : "{}"});
+  return r.json();
+}
+
+$("#run").onclick = async () => {
+  const ep = $("#ep").value.trim();
+  if (!ep) { $("#out").textContent = "enter an episode id"; return; }
+  $("#out").textContent = "running…";
+  const res = await postJSON("/api/learn/cycle", {
+    episode: ep, niche: $("#niche").value, hashtags: $("#tags").value,
+    caption: $("#caption").value, privacy: $("#privacy").value || null,
+  });
+  $("#out").textContent = JSON.stringify(res, null, 2);
+  refresh();
+};
+$("#harvest").onclick = async () => {
+  $("#out").textContent = "harvesting…";
+  const res = await postJSON("/api/learn/harvest");
+  $("#out").textContent = JSON.stringify(res, null, 2);
+  refresh();
+};
+$("#train").onclick = async () => {
+  $("#out").textContent = "training…";
+  const res = await postJSON("/api/learn/train");
+  $("#out").textContent = JSON.stringify(res, null, 2);
+  refresh();
+};
+
+refresh();
+setInterval(refresh, 15000);
+</script>
+</body>
+</html>

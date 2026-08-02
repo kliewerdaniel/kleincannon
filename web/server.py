@@ -205,6 +205,62 @@ async def episodes():
     return {"episodes": out}
 
 
+# ---- learning subsystem API ------------------------------------------------
+@app.get("/api/learn/status")
+async def learn_status():
+    from kleincannon.learn import agency
+    return agency.status()
+
+
+@app.get("/api/learn/recommend")
+async def learn_recommend(episode: str):
+    from kleincannon.learn import optimize
+    from kleincannon.episode import Episode
+    ep = Episode.load(episode)
+    cands = optimize.optimize(ep)
+    return {"episode": episode,
+            "best": {"variation": cands[0].get("variation"),
+                     "predicted_reward": cands[0].get("_predicted_reward"),
+                     "uncertainty": cands[0].get("_uncertainty")},
+            "top5": [{"variation": c.get("variation"),
+                      "predicted_reward": c.get("_predicted_reward")} for c in cands[:5]]}
+
+
+@app.post("/api/learn/cycle")
+async def learn_cycle(req: Request):
+    from kleincannon.learn import agency
+    body = await req.json()
+    out = agency.run_cycle(
+        body["episode"], niche=body.get("niche", ""),
+        hashtags=[h.strip() for h in (body.get("hashtags") or "").split(",") if h.strip()],
+        caption=body.get("caption", ""), parent_id=body.get("parent"),
+        privacy=body.get("privacy"), auto_train=not body.get("no_train", False))
+    return out
+
+
+@app.post("/api/learn/harvest")
+async def learn_harvest():
+    from kleincannon.learn import harvester as hv
+    return hv.harvest_all()
+
+
+@app.post("/api/learn/train")
+async def learn_train():
+    from kleincannon.learn import trainer as tr
+    return tr.train_from_history()
+
+
+@app.get("/api/learn/history")
+async def learn_history():
+    from kleincannon.learn import trainer as tr
+    return tr.history()
+
+
+@app.get("/learn")
+async def learn_page():
+    return FileResponse(_STATIC / "learn.html")
+
+
 @app.get("/")
 async def index():
     return FileResponse(_STATIC / "index.html")
