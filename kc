@@ -54,16 +54,25 @@ def main(argv=None) -> int:
     sp.add_argument("--manual-script", default="", help="one sentence per beat, newline-separated")
     sp.add_argument("--beats", type=int, default=6)
     sp.add_argument("--voice", default=config.DEFAULT_VOICE)
+    sp.add_argument("--speed", type=float, default=None, help="TTS speed multiplier (e.g. 1.12)")
+    sp.add_argument("--style", default="auto",
+                    help="visual style name from the catalog, or a custom suffix, or 'auto'")
 
     sp = sub.add_parser("tts")
-    add_ep(sp); sp.add_argument("--voice"); sp.add_argument("--speed", type=float, default=1.0)
+    add_ep(sp); sp.add_argument("--voice"); sp.add_argument("--speed", type=float, default=None)
 
     sp = sub.add_parser("align"); add_ep(sp)
     sp = sub.add_parser("prompts"); add_ep(sp)
+    sp.add_argument("--style", default="auto",
+                    help="force a visual style (catalog name | custom suffix | 'auto')")
     sp = sub.add_parser("images"); add_ep(sp)
     sp.add_argument("--fast", action="store_true")
     sp.add_argument("--force", action="store_true")
     sp.add_argument("--seed", type=int)
+    sp.add_argument("--steps", type=int, default=None,
+                    help="override sampler steps (None = workflow default)")
+    sp.add_argument("--cfg", type=float, default=None,
+                    help="override CFG scale (None = workflow default)")
     sp = sub.add_parser("captions"); add_ep(sp)
     sp = sub.add_parser("build"); add_ep(sp)
 
@@ -73,6 +82,9 @@ def main(argv=None) -> int:
     sp.add_argument("--manual-script", default="")
     sp.add_argument("--beats", type=int, default=6)
     sp.add_argument("--voice", default=config.DEFAULT_VOICE)
+    sp.add_argument("--speed", type=float, default=None, help="TTS speed multiplier")
+    sp.add_argument("--style", default="auto",
+                    help="visual style name | custom suffix | 'auto'")
     sp.add_argument("--fast", action="store_true")
 
     sp = sub.add_parser("sheet"); add_ep(sp)
@@ -123,17 +135,25 @@ def main(argv=None) -> int:
         else:
             ep = script_stage.from_ai(args.topic, purpose=args.purpose,
                                       beats=args.beats, voice=args.voice)
+        if args.speed is not None:
+            ep.speed = args.speed
+        if args.style and args.style != "auto":
+            ep.style = args.style
+        ep.save()
         print("created:", ep.id)
         return 0
 
     if args.cmd == "tts":
-        tts_stage.run(_id(args), speed=args.speed, voice=args.voice)
+        tts_stage.run(_id(args), voice=args.voice, speed=args.speed)
     elif args.cmd == "align":
         align_stage.run(_id(args))
     elif args.cmd == "prompts":
-        prompts_stage.run(_id(args))
+        prompts_stage.run(_id(args), style_suffix=args.style)
     elif args.cmd == "images":
-        images_stage.run(_id(args), fast=args.fast, force=args.force, seed=args.seed)
+        images_stage.run(_id(args), fast=args.fast, force=args.force,
+                         seed=args.seed,
+                         steps=getattr(args, "steps", None),
+                         cfg=getattr(args, "cfg", None))
     elif args.cmd == "captions":
         captions_stage.run(_id(args))
     elif args.cmd == "build":
@@ -236,10 +256,15 @@ def main(argv=None) -> int:
         else:
             ep = script_stage.from_ai(args.topic, purpose=args.purpose, beats=args.beats,
                                       voice=args.voice)
+        if args.speed is not None:
+            ep.speed = args.speed
+        if args.style and args.style != "auto":
+            ep.style = args.style
+        ep.save()
         eid = ep.id
-        tts_stage.run(eid, voice=args.voice)
+        tts_stage.run(eid, voice=args.voice, speed=args.speed)
         align_stage.run(eid)
-        prompts_stage.run(eid)
+        prompts_stage.run(eid, style_suffix=args.style)
         images_stage.run(eid, fast=args.fast)
         captions_stage.run(eid)
         assemble_stage.run(eid)
@@ -271,6 +296,10 @@ def _doctor() -> None:
     print(f"FLUX.2-klein:  {gguf}  {'OK' if gguf.exists() else 'MISSING (run scripts/fetch_models.py)'}")
     print(f"TTS engine:    Qwen3-TTS via mlx-audio ({config.QWEN3_MODEL_ID})")
     print(f"  mlx-audio:   {'installed' if _pkg_ok('mlx_audio') else 'MISSING (pip install mlx-audio)'}")
+    print(f"  default speed: {config.DEFAULT_TTS_SPEED}x (narration pacing)")
+    print(f"  style catalog: {len(config.STYLE_CATALOG)} looks available "
+          f"(e.g. {', '.join(s['name'] for s in config.STYLE_CATALOG[:4])} …)")
+    print(f"  style rule: each topic auto-picks a distinct look; override with --style")
     voice = config.VOICES / f"{config.DEFAULT_VOICE}.wav"
     print(f"default voice: {voice} {'OK' if voice.exists() else 'MISSING'} "
           f"(transcript auto-derived by whisper; no .txt needed)")

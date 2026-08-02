@@ -53,8 +53,23 @@
         <label>Voice (clip in voices/, minus extension)
           <input name="voice" value="chris" />
         </label>
-        <label>Visual style suffix (optional)
-          <input name="style_suffix" placeholder="leave blank for the default moody cinematic look" />
+        <label for="style-select">Visual style
+          <select name="style" id="style-select">
+            <option value="auto">auto (pick per topic)</option>
+          </select>
+        </label>
+        <label for="steps">Sampler steps (blank = default)
+          <input type="number" name="steps" id="steps" min="1" max="60" placeholder="default" />
+        </label>
+        <label for="cfg">CFG scale (blank = default)
+          <input type="number" name="cfg" id="cfg" min="0" max="20" step="0.1" placeholder="default" />
+        </label>
+        <label for="seed">Image seed (blank = per-beat)
+          <input type="number" name="seed" id="seed" min="0" step="1" placeholder="default" />
+        </label>
+        <label>Narration speed
+          <input type="range" name="speed" id="speed" min="0.9" max="1.4" step="0.01" value="1.12" />
+          <span id="speed-val">1.12×</span>
         </label>
         <label>Motion per beat
           <select name="motion">

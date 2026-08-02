@@ -1,0 +1,738 @@
+{
+  "id": "2026-08-02-why-you-will-basically-never-win-the-lot",
+  "topic": "why you will basically never win the lottery",
+  "hook": "",
+  "purpose": "",
+  "beats": [
+    {
+      "id": "b01",
+      "text": "Every time you buy a lottery ticket, the math says you have already lost \u2014 and here is the part nobody mentions.",
+      "image_prompt": "wide establishing shot: a lone figure at a dim counter, a quiet moment before a decision. warm natural documentary photograph, vertical 9:16, available light, golden hour, 35mm film look, gentle film grain, earthy amber and cream palette, high detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
+      "image": "images/b01.png",
+      "audio_start": 0.0,
+      "audio_end": 6.34,
+      "motion": "in"
+    },
+    {
+      "id": "b02",
+      "text": "A single Powerball ticket has about a 1 in 292 million chance of hitting the jackpot.",
+      "image_prompt": "medium shot: a hand pausing, a look of dawning disbelief settling across the face. warm natural documentary photograph, vertical 9:16, available light, golden hour, 35mm film look, gentle film grain, earthy amber and cream palette, high detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
+      "image": "images/b02.png",
+      "audio_start": 6.34,
+      "audio_end": 13.06,
+      "motion": "in"
+    },
+    {
+      "id": "b03",
+      "text": "That is roughly the same as flipping a coin and landing on heads 28 times in a row.",
+      "image_prompt": "close-up detail: a caught mid-flip against a dark backdrop, frozen in motion. warm natural documentary photograph, vertical 9:16, available light, golden hour, 35mm film look, gentle film grain, earthy amber and cream palette, high detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
+      "image": "images/b03.png",
+      "audio_start": 13.06,
+      "audio_end": 19.96,
+      "motion": "in"
+    },
+    {
+      "id": "b04",
+      "text": "Even buying a thousand tickets every week, you would wait on average about 560 years to win once.",
+      "image_prompt": "over-the-shoulder angle: a person watching a long endless queue, the futility of sheer scale. warm natural documentary photograph, vertical 9:16, available light, golden hour, 35mm film look, gentle film grain, earthy amber and cream palette, high detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
+      "image": "images/b04.png",
+      "audio_start": 19.96,
+      "audio_end": 27.22,
+      "motion": "in"
+    },
+    {
+      "id": "b05",
+      "text": "And the jackpot is not even the full prize \u2014 take the cash option, pay taxes, and about half of it vanishes.",
+      "image_prompt": "low-angle heroic framing: a towering stack of papers shrinking as a hand sweeps most of it away. warm natural documentary photograph, vertical 9:16, available light, golden hour, 35mm film look, gentle film grain, earthy amber and cream palette, high detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
+      "image": "images/b05.png",
+      "audio_start": 27.22,
+      "audio_end": 34.88,
+      "motion": "in"
+    },
+    {
+      "id": "b06",
+      "text": "So the thing being sold was never a win; it was the five seconds of imagining you might.",
+      "image_prompt": "extreme close-up: a close face in low light, a brief flicker of fading into a quiet exhale. warm natural documentary photograph, vertical 9:16, available light, golden hour, 35mm film look, gentle film grain, earthy amber and cream palette, high detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
+      "image": "images/b06.png",
+      "audio_start": 34.88,
+      "audio_end": 40.42,
+      "motion": "in"
+    }
+  ],
+  "voice": "chris",
+  "speed": 1.12,
+  "style": "Warm Documentary",
+  "style_name": "Warm Documentary",
+  "style_suffix": "warm natural documentary photograph, vertical 9:16, available light, golden hour, 35mm film look, gentle film grain, earthy amber and cream palette, high detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
+  "cta": "",
+  "voice_audio": "audio/voice.wav",
+  "words": [
+    {
+      "word": "Every",
+      "key": "every",
+      "start": 0.0,
+      "end": 0.24
+    },
+    {
+      "word": "time",
+      "key": "time",
+      "start": 0.24,
+      "end": 0.44
+    },
+    {
+      "word": "you",
+      "key": "you",
+      "start": 0.44,
+      "end": 0.62
+    },
+    {
+      "word": "buy",
+      "key": "buy",
+      "start": 0.62,
+      "end": 0.8
+    },
+    {
+      "word": "a",
+      "key": "a",
+      "start": 0.8,
+      "end": 0.98
+    },
+    {
+      "word": "lottery",
+      "key": "lottery",
+      "start": 0.98,
+      "end": 1.16
+    },
+    {
+      "word": "ticket,",
+      "key": "ticket",
+      "start": 1.16,
+      "end": 1.6
+    },
+    {
+      "word": "the",
+      "key": "the",
+      "start": 1.82,
+      "end": 1.84
+    },
+    {
+      "word": "map",
+      "key": "map",
+      "start": 1.84,
+      "end": 2.06
+    },
+    {
+      "word": "says",
+      "key": "says",
+      "start": 2.06,
+      "end": 2.36
+    },
+    {
+      "word": "you",
+      "key": "you",
+      "start": 2.36,
+      "end": 2.58
+    },
+    {
+      "word": "have",
+      "key": "have",
+      "start": 2.58,
+      "end": 2.68
+    },
+    {
+      "word": "already",
+      "key": "already",
+      "start": 2.68,
+      "end": 2.94
+    },
+    {
+      "word": "lost.",
+      "key": "lost",
+      "start": 2.94,
+      "end": 3.32
+    },
+    {
+      "word": "And",
+      "key": "and",
+      "start": 4.02,
+      "end": 4.1
+    },
+    {
+      "word": "here's",
+      "key": "here's",
+      "start": 4.1,
+      "end": 4.36
+    },
+    {
+      "word": "the",
+      "key": "the",
+      "start": 4.36,
+      "end": 4.5
+    },
+    {
+      "word": "part",
+      "key": "part",
+      "start": 4.5,
+      "end": 4.78
+    },
+    {
+      "word": "nobody",
+      "key": "nobody",
+      "start": 4.78,
+      "end": 5.18
+    },
+    {
+      "word": "mentions.",
+      "key": "mentions",
+      "start": 5.18,
+      "end": 5.72
+    },
+    {
+      "word": "A",
+      "key": "a",
+      "start": 6.34,
+      "end": 6.54
+    },
+    {
+      "word": "single",
+      "key": "single",
+      "start": 6.54,
+      "end": 7.04
+    },
+    {
+      "word": "Powerball",
+      "key": "powerball",
+      "start": 7.04,
+      "end": 7.88
+    },
+    {
+      "word": "ticket",
+      "key": "ticket",
+      "start": 7.88,
+      "end": 8.3
+    },
+    {
+      "word": "has",
+      "key": "has",
+      "start": 8.3,
+      "end": 8.68
+    },
+    {
+      "word": "about",
+      "key": "about",
+      "start": 8.68,
+      "end": 9.02
+    },
+    {
+      "word": "a",
+      "key": "a",
+      "start": 9.02,
+      "end": 9.2
+    },
+    {
+      "word": "one",
+      "key": "one",
+      "start": 9.2,
+      "end": 9.44
+    },
+    {
+      "word": "in",
+      "key": "in",
+      "start": 9.44,
+      "end": 9.64
+    },
+    {
+      "word": "292",
+      "key": "292",
+      "start": 9.64,
+      "end": 10.46
+    },
+    {
+      "word": "million",
+      "key": "million",
+      "start": 10.46,
+      "end": 11.5
+    },
+    {
+      "word": "chance",
+      "key": "chance",
+      "start": 11.5,
+      "end": 12.12
+    },
+    {
+      "word": "of",
+      "key": "of",
+      "start": 12.12,
+      "end": 12.38
+    },
+    {
+      "word": "hitting",
+      "key": "hitting",
+      "start": 12.38,
+      "end": 12.6
+    },
+    {
+      "word": "the",
+      "key": "the",
+      "start": 12.6,
+      "end": 12.82
+    },
+    {
+      "word": "jackpot.",
+      "key": "jackpot",
+      "start": 12.82,
+      "end": 13.04
+    },
+    {
+      "word": "That",
+      "key": "that",
+      "start": 13.06,
+      "end": 13.32
+    },
+    {
+      "word": "is",
+      "key": "is",
+      "start": 13.32,
+      "end": 13.5
+    },
+    {
+      "word": "roughly",
+      "key": "roughly",
+      "start": 13.5,
+      "end": 13.8
+    },
+    {
+      "word": "the",
+      "key": "the",
+      "start": 13.8,
+      "end": 14.16
+    },
+    {
+      "word": "same",
+      "key": "same",
+      "start": 14.16,
+      "end": 14.42
+    },
+    {
+      "word": "as",
+      "key": "as",
+      "start": 14.42,
+      "end": 14.7
+    },
+    {
+      "word": "flipping",
+      "key": "flipping",
+      "start": 14.7,
+      "end": 15.0
+    },
+    {
+      "word": "a",
+      "key": "a",
+      "start": 15.0,
+      "end": 15.3
+    },
+    {
+      "word": "coin",
+      "key": "coin",
+      "start": 15.3,
+      "end": 15.58
+    },
+    {
+      "word": "and",
+      "key": "and",
+      "start": 15.58,
+      "end": 16.42
+    },
+    {
+      "word": "landing",
+      "key": "landing",
+      "start": 16.42,
+      "end": 16.94
+    },
+    {
+      "word": "on",
+      "key": "on",
+      "start": 16.94,
+      "end": 17.4
+    },
+    {
+      "word": "heads",
+      "key": "heads",
+      "start": 17.4,
+      "end": 17.76
+    },
+    {
+      "word": "28",
+      "key": "28",
+      "start": 17.76,
+      "end": 18.18
+    },
+    {
+      "word": "times",
+      "key": "times",
+      "start": 18.18,
+      "end": 18.6
+    },
+    {
+      "word": "in",
+      "key": "in",
+      "start": 18.6,
+      "end": 18.86
+    },
+    {
+      "word": "a",
+      "key": "a",
+      "start": 18.86,
+      "end": 18.98
+    },
+    {
+      "word": "row,",
+      "key": "row",
+      "start": 18.98,
+      "end": 19.3
+    },
+    {
+      "word": "even",
+      "key": "even",
+      "start": 19.96,
+      "end": 20.28
+    },
+    {
+      "word": "buying",
+      "key": "buying",
+      "start": 20.28,
+      "end": 20.64
+    },
+    {
+      "word": "a",
+      "key": "a",
+      "start": 20.64,
+      "end": 20.82
+    },
+    {
+      "word": "thousand",
+      "key": "thousand",
+      "start": 20.82,
+      "end": 21.14
+    },
+    {
+      "word": "tickets",
+      "key": "tickets",
+      "start": 21.14,
+      "end": 21.6
+    },
+    {
+      "word": "every",
+      "key": "every",
+      "start": 21.6,
+      "end": 22.02
+    },
+    {
+      "word": "week.",
+      "key": "week",
+      "start": 22.02,
+      "end": 22.38
+    },
+    {
+      "word": "You",
+      "key": "you",
+      "start": 22.86,
+      "end": 23.12
+    },
+    {
+      "word": "would",
+      "key": "would",
+      "start": 23.12,
+      "end": 23.26
+    },
+    {
+      "word": "wait",
+      "key": "wait",
+      "start": 23.26,
+      "end": 23.52
+    },
+    {
+      "word": "on",
+      "key": "on",
+      "start": 23.52,
+      "end": 23.78
+    },
+    {
+      "word": "average",
+      "key": "average",
+      "start": 23.78,
+      "end": 24.14
+    },
+    {
+      "word": "about",
+      "key": "about",
+      "start": 24.14,
+      "end": 24.52
+    },
+    {
+      "word": "560",
+      "key": "560",
+      "start": 24.52,
+      "end": 25.14
+    },
+    {
+      "word": "years",
+      "key": "years",
+      "start": 25.14,
+      "end": 26.04
+    },
+    {
+      "word": "to",
+      "key": "to",
+      "start": 26.04,
+      "end": 26.44
+    },
+    {
+      "word": "win",
+      "key": "win",
+      "start": 26.44,
+      "end": 26.74
+    },
+    {
+      "word": "once.",
+      "key": "once",
+      "start": 26.74,
+      "end": 27.22
+    },
+    {
+      "word": "And",
+      "key": "and",
+      "start": 27.22,
+      "end": 27.62
+    },
+    {
+      "word": "the",
+      "key": "the",
+      "start": 27.62,
+      "end": 27.76
+    },
+    {
+      "word": "jackpot",
+      "key": "jackpot",
+      "start": 27.76,
+      "end": 28.24
+    },
+    {
+      "word": "is",
+      "key": "is",
+      "start": 28.24,
+      "end": 28.44
+    },
+    {
+      "word": "not",
+      "key": "not",
+      "start": 28.44,
+      "end": 28.62
+    },
+    {
+      "word": "even",
+      "key": "even",
+      "start": 28.62,
+      "end": 28.9
+    },
+    {
+      "word": "a",
+      "key": "a",
+      "start": 28.9,
+      "end": 29.12
+    },
+    {
+      "word": "full",
+      "key": "full",
+      "start": 29.12,
+      "end": 29.32
+    },
+    {
+      "word": "price.",
+      "key": "price",
+      "start": 29.32,
+      "end": 29.68
+    },
+    {
+      "word": "Take",
+      "key": "take",
+      "start": 30.3,
+      "end": 30.42
+    },
+    {
+      "word": "the",
+      "key": "the",
+      "start": 30.42,
+      "end": 30.62
+    },
+    {
+      "word": "cash",
+      "key": "cash",
+      "start": 30.62,
+      "end": 30.9
+    },
+    {
+      "word": "option,",
+      "key": "option",
+      "start": 30.9,
+      "end": 31.38
+    },
+    {
+      "word": "pay",
+      "key": "pay",
+      "start": 31.48,
+      "end": 31.66
+    },
+    {
+      "word": "taxes,",
+      "key": "taxes",
+      "start": 31.66,
+      "end": 32.12
+    },
+    {
+      "word": "and",
+      "key": "and",
+      "start": 32.42,
+      "end": 32.5
+    },
+    {
+      "word": "about",
+      "key": "about",
+      "start": 32.5,
+      "end": 32.78
+    },
+    {
+      "word": "half",
+      "key": "half",
+      "start": 32.78,
+      "end": 33.12
+    },
+    {
+      "word": "of",
+      "key": "of",
+      "start": 33.12,
+      "end": 33.3
+    },
+    {
+      "word": "it",
+      "key": "it",
+      "start": 33.3,
+      "end": 33.52
+    },
+    {
+      "word": "vanishes.",
+      "key": "vanishes",
+      "start": 33.52,
+      "end": 34.1
+    },
+    {
+      "word": "So",
+      "key": "so",
+      "start": 34.88,
+      "end": 35.18
+    },
+    {
+      "word": "the",
+      "key": "the",
+      "start": 35.18,
+      "end": 35.4
+    },
+    {
+      "word": "thing",
+      "key": "thing",
+      "start": 35.4,
+      "end": 35.64
+    },
+    {
+      "word": "being",
+      "key": "being",
+      "start": 35.64,
+      "end": 35.9
+    },
+    {
+      "word": "sold",
+      "key": "sold",
+      "start": 35.9,
+      "end": 36.28
+    },
+    {
+      "word": "was",
+      "key": "was",
+      "start": 36.28,
+      "end": 36.56
+    },
+    {
+      "word": "never",
+      "key": "never",
+      "start": 36.56,
+      "end": 36.88
+    },
+    {
+      "word": "a",
+      "key": "a",
+      "start": 36.88,
+      "end": 37.02
+    },
+    {
+      "word": "win.",
+      "key": "win",
+      "start": 37.02,
+      "end": 37.22
+    },
+    {
+      "word": "It",
+      "key": "it",
+      "start": 37.72,
+      "end": 37.88
+    },
+    {
+      "word": "was",
+      "key": "was",
+      "start": 37.88,
+      "end": 38.02
+    },
+    {
+      "word": "the",
+      "key": "the",
+      "start": 38.02,
+      "end": 38.2
+    },
+    {
+      "word": "five",
+      "key": "five",
+      "start": 38.2,
+      "end": 38.46
+    },
+    {
+      "word": "seconds",
+      "key": "seconds",
+      "start": 38.46,
+      "end": 38.92
+    },
+    {
+      "word": "of",
+      "key": "of",
+      "start": 38.92,
+      "end": 39.28
+    },
+    {
+      "word": "imagining",
+      "key": "imagining",
+      "start": 39.28,
+      "end": 39.86
+    },
+    {
+      "word": "you",
+      "key": "you",
+      "start": 39.86,
+      "end": 40.2
+    },
+    {
+      "word": "might.",
+      "key": "might",
+      "start": 40.2,
+      "end": 40.42
+    }
+  ],
+  "final": "2026-08-02-why-you-will-basically-never-win-the-lot.mp4"
+}

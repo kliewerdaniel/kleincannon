@@ -68,6 +68,11 @@ class RunParams(BaseModel):
     fast: bool = False
     motion: str = "in"
     cta: str = ""
+    speed: float = config.DEFAULT_TTS_SPEED
+    style: str = "auto"              # catalog name | custom suffix | "auto"
+    steps: int | None = None
+    cfg: float | None = None
+    seed: int | None = None
 
 
 def _apply_overrides(p: RunParams) -> None:
@@ -84,6 +89,10 @@ def _apply_overrides(p: RunParams) -> None:
         "CRF": p.crf,
         "ALIGN_MODEL": p.align_model,
         "CTA": p.cta,
+        "PROMPT_STYLE": p.style or "auto",
+        "IMAGE_SEED": p.seed,
+        "IMAGE_STEPS": p.steps,
+        "IMAGE_CFG": p.cfg,
     })
 
 
@@ -105,17 +114,21 @@ def _run_pipeline(p: RunParams) -> str:
             ep = s_stage.from_ai(p.topic, purpose=p.purpose, beats=p.beats, voice=p.voice)
         eid = ep.id
 
-        stage("tts", f"Voicing with '{p.voice}' (F5TTS)")
+        stage("tts", f"Voicing with '{p.voice}' (Qwen3-TTS)")
+        # honour the speed slider by writing it onto the episode before voicing
+        ep.speed = p.speed or config.DEFAULT_TTS_SPEED
+        ep.save()
         tts.run(eid)
 
         stage("align", "Aligning words to audio")
         align.run(eid)
 
         stage("prompts", "Composing image prompts")
-        prompts.run(eid, style_suffix=p.style_suffix or prompts.STYLE_SUFFIX)
+        prompts.run(eid, style_suffix=p.style or "auto")
 
         stage("images", "Rendering visuals (FLUX.2-klein via ComfyUI)")
-        images.run(eid, fast=p.fast)
+        images.run(eid, fast=p.fast,
+                   seed=config.IMAGE_SEED, steps=config.IMAGE_STEPS, cfg=config.IMAGE_CFG)
 
         stage("captions", "Rasterizing karaoke captions")
         captions.run(eid)
@@ -190,6 +203,17 @@ async def stream(request: Request):
             _subscribers.discard(q)
 
     return StreamingResponse(gen(), media_type="text/event-stream")
+
+
+@app.get("/api/styles")
+async def styles():
+    return {
+        "default_speed": config.DEFAULT_TTS_SPEED,
+        "styles": [
+            {"name": s["name"], "palette": s.get("palette", "")}
+            for s in config.STYLE_CATALOG
+        ],
+    }
 
 
 @app.get("/api/episodes")

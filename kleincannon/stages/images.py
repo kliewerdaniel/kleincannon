@@ -25,7 +25,8 @@ def _dims(fast: bool) -> tuple[int, int]:
 
 
 def run(episode_id: str, fast: bool = False, force: bool = False,
-        seed: int | None = None) -> Episode:
+        seed: int | None = None, steps: int | None = None,
+        cfg: float | None = None) -> Episode:
     ep = Episode.load(episode_id)
     if not any(b.image_prompt for b in ep.beats):
         raise SystemExit("run the prompts stage first (no image prompts)")
@@ -67,6 +68,8 @@ def run(episode_id: str, fast: bool = False, force: bool = False,
                     workflow=workflow,
                     width=w,
                     height=h,
+                    steps=steps,
+                    cfg=cfg,
                 )
             except (comfy.ComfyServerDied, SystemExit) as e:
                 print(f"    attempt {attempt} failed ({e}); retrying on same server")

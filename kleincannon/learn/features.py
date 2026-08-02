@@ -18,7 +18,9 @@ from typing import Any
 
 import numpy as np
 
-FEATURE_VERSION = 1
+from .. import config
+
+FEATURE_VERSION = 2  # v2: added per-style one-hot (vid_style_*) + video_speed
 
 # --- tiny lexicons for content features (no external deps) ---
 _POS = {"good", "great", "best", "love", "amazing", "happy", "win", "free",
@@ -82,13 +84,23 @@ def video_features(meta: dict[str, Any]) -> dict[str, float]:
     pacing = min(1.0, (wc / dur) / 3.0) if dur else 0.0   # ~3 wps is brisk
     sub_density = 1.0 if str(meta.get("subtitle_style", "")) == "karaoke" else 0.0
     music_cat = 1.0 if str(meta.get("music", "")) not in ("", "none") else 0.0
-    return {
+    # Visual style as a one-hot over the catalog. Distinct styles => distinct
+    # feature columns, so the bandit can learn which look performs. The style
+    # NAME is carried on the episode manifest + experience meta (see metadata.py).
+    style_name = str(meta.get("style_name", "") or "").strip()
+    style_onehot = {f"vid_style_{c['name'].replace(' ', '_')}":
+                    1.0 if c["name"] == style_name else 0.0
+                    for c in config.STYLE_CATALOG} if config.STYLE_CATALOG else {}
+    out = {
         "video_duration_norm": round(dur_bucket, 4),
         "video_pacing": round(pacing, 4),
         "video_cuts": 0.0,                 # single-image Ken Burns => 0 cuts
         "video_subtitle_density": sub_density,
         "video_music_category": music_cat,
+        "video_speed": round(float(meta.get("speed", 1.0) or 1.0), 4),
     }
+    out.update(style_onehot)
+    return out
 
 
 def posting_features(meta: dict[str, Any]) -> dict[str, float]:
@@ -145,7 +157,7 @@ def feature_names() -> list[str]:
     sample = {
         "hook": "", "script": "", "title": "", "video_length": 0, "subtitle_style": "",
         "music": "", "posting_day": "Unknown", "posting_time": "", "poster_account": "",
-        "niche": "", "topic": "",
+        "niche": "", "topic": "", "style_name": "", "speed": 1.0,
     }
     return sorted(extract(sample).keys())
 

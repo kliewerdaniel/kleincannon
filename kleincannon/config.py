@@ -36,6 +36,58 @@ QWEN3_MODEL_ID = "mlx-community/Qwen3-TTS-12Hz-1.7B-Base-4bit"
 QWEN3_REF_STT = "base"            # faster-whisper model for ref transcription
 DEFAULT_VOICE = "chris"            # resolves voices/chris.wav (full clip)
 
+# --- TTS pacing (human-in-the-loop parameter) ---
+# The cloned voice reads slightly slow by default; the user asked for a touch
+# of speed-up so the narration keeps pace. 1.0 = natural, >1.0 = faster.
+DEFAULT_TTS_SPEED = 1.12
+
+# --- Visual "style" library (human-in-the-loop parameter) ---
+# Every generated video gets one of these style pre-prompts appended to each
+# beat's image prompt. The default FLUX.2-klein output drifts blue/teal and all
+# clips look alike, so each episode now draws a DISTINCT style (deterministically
+# from its id, or explicitly via --style / the web form) so videos don't repeat
+# looks. Each suffix keeps the "absolutely no text …" guard. The style NAME is
+# stored on the episode manifest and fed to the learning engine so the bandit can
+# learn which looks perform — i.e. style is both adjustable by you AND observable
+# by the optimizer.
+STYLE_CATALOG = [
+    {"name": "Moody Cinematic", "palette": "teal & amber",
+     "suffix": "cinematic editorial photograph, vertical 9:16 composition, shot on 35mm, "
+               "shallow depth of field, moody directional window light, desaturated teal and amber "
+               "palette, film grain, high detail, absolutely no text, no writing, no signage, "
+               "no readable screens, no numbers, no logos"},
+    {"name": "Warm Documentary", "palette": "golden amber",
+     "suffix": "warm natural documentary photograph, vertical 9:16, available light, golden hour, "
+               "35mm film look, gentle film grain, earthy amber and cream palette, high detail, "
+               "absolutely no text, no writing, no signage, no readable screens, no numbers, no logos"},
+    {"name": "Noir", "palette": "monochrome",
+     "suffix": "high-contrast black and white film noir photograph, vertical 9:16, hard directional "
+               "lighting, deep shadows, stark monochrome, dramatic chiaroscuro, film grain, "
+               "absolutely no text, no writing, no signage, no readable screens, no numbers, no logos"},
+    {"name": "Vivid Editorial", "palette": "saturated",
+     "suffix": "vibrant fashion-editorial photograph, vertical 9:16, bold saturated color, glossy "
+               "studio light, punchy contrast, sharp detail, absolutely no text, no writing, no "
+               "signage, no readable screens, no numbers, no logos"},
+    {"name": "Soft Pastel", "palette": "pink & sky",
+     "suffix": "soft pastel-toned lifestyle photograph, vertical 9:16, airy diffuse light, gentle "
+               "pinks and sky blues, dreamy low-contrast, fine grain, absolutely no text, no writing, "
+               "no signage, no readable screens, no numbers, no logos"},
+    {"name": "Cyberpunk Neon", "palette": "magenta & cyan",
+     "suffix": "cyberpunk neon photograph, vertical 9:16, electric magenta and cyan glow, dark wet "
+               "streets, volumetric light, high contrast, absolutely no text, no writing, no signage, "
+               "no readable screens, no numbers, no logos"},
+    {"name": "Vintage Faded", "palette": "sepia wash",
+     "suffix": "faded vintage 1970s photograph, vertical 9:16, muted washed-out tones, light leaks, "
+               "soft focus, warm sepia cast, absolutely no text, no writing, no signage, no readable "
+               "screens, no numbers, no logos"},
+]
+# Override keys (runtime-set via config.push_overrides / web form). Defined here
+# so push_overrides finds them as real module attributes.
+PROMPT_STYLE = "auto"              # "auto" => derive deterministically per episode
+IMAGE_SEED = None                  # None => deterministic per-beat seed in images.py
+IMAGE_STEPS = None                 # None => workflow default (FAST_STEPS in --fast)
+IMAGE_CFG = None                   # None => workflow default CFG (temperature analog)
+
 # --- Images (ComfyUI + FLUX.2-klein GGUF) — ComfyUI is auto-launched if needed ---
 COMFY_DIR = PROJECTS / "image" / "ComfyUI"
 COMFY_URL = "http://127.0.0.1:8188"

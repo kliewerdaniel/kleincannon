@@ -33,6 +33,7 @@ N_SCHED = "Flux2Scheduler"
 N_NOISE = "RandomNoise"
 N_PRIMITIVE = "PrimitiveInt"      # width/height (two of them: width then height)
 N_LORA = "Lora Loader (LoraManager)"
+N_CFG = "CFGGuider"               # cfg scale
 
 
 # ---------------------------------------------------------------- workflow
@@ -159,8 +160,9 @@ def _by_type(api: dict, class_type: str) -> list[str]:
 
 
 def build_prompt(api: dict, positive: str, negative: str, seed: int,
-                 width: int | None = None, height: int | None = None) -> dict:
-    """Patch the klein graph: prompts, seed, latent size."""
+                 width: int | None = None, height: int | None = None,
+                 steps: int | None = None, cfg: float | None = None) -> dict:
+    """Patch the klein graph: prompts, seed, latent size, steps, cfg."""
     graph = json.loads(json.dumps(api))
 
     # positive = the CLIPTextEncode whose text is non-empty in the original;
@@ -210,6 +212,16 @@ def build_prompt(api: dict, positive: str, negative: str, seed: int,
         for nid in _by_type(graph, N_SCHED):
             graph[nid]["inputs"]["width"] = width
             graph[nid]["inputs"]["height"] = height
+
+    # steps (Flux2Scheduler) / cfg (CFGGuider) — only if the caller overrides
+    if steps is not None:
+        for nid in _by_type(graph, N_SCHED):
+            if "steps" in graph[nid]["inputs"]:
+                graph[nid]["inputs"]["steps"] = steps
+    if cfg is not None:
+        for nid in _by_type(graph, N_CFG):
+            if "cfg" in graph[nid]["inputs"]:
+                graph[nid]["inputs"]["cfg"] = cfg
 
     # Bypass the Lora Loader if present (user reported the LoRA is not needed and
     # its file may be absent). mode=4 == bypass in litegraph.
@@ -549,12 +561,13 @@ def http_client_exception():
 
 def generate(positive: str, negative: str, seed: int, dest: Path,
              workflow: dict | None = None,
-             width: int | None = None, height: int | None = None) -> Path:
+             width: int | None = None, height: int | None = None,
+             steps: int | None = None, cfg: float | None = None) -> Path:
     """Queue one generation. On a server crash, copy whatever file landed and
     return; the caller (images.run) restarts the server and retries until the
     destination exists."""
     graph = build_prompt(workflow or load_workflow(), positive, negative, seed,
-                          width=width, height=height)
+                          width=width, height=height, steps=steps, cfg=cfg)
     sub = _save_subfolder(graph, seed)
     pid = queue(graph)
     try:

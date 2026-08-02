@@ -117,6 +117,10 @@ function init() {
     data.fast = form.elements.fast.checked;
     data.beats = parseInt(data.beats, 10);
     data.zoom_max = parseFloat(data.zoom_max);
+    data.speed = parseFloat(data.speed);
+    data.steps = data.steps ? parseInt(data.steps, 10) : null;
+    data.cfg = data.cfg ? parseFloat(data.cfg) : null;
+    data.seed = data.seed ? parseInt(data.seed, 10) : null;
     resultEl.classList.add("hidden");
     resultEl.innerHTML = "";
     appendLog("• submitting");
@@ -128,6 +132,34 @@ function init() {
     const j = await r.json();
     if (!j.accepted) appendLog("✖ " + (j.error || "rejected"));
   });
+
+  // populate the style dropdown from the API and live-update the speed label
+  const speed = form.elements.speed;
+  const speedVal = $("#speed-val");
+  if (speed && speedVal) {
+    const sync = () => { speedVal.textContent = (parseFloat(speed.value)).toFixed(2) + "×"; };
+    speed.addEventListener("input", sync);
+    sync();
+  }
+  (async () => {
+    try {
+      const sr = await fetch("/api/styles");
+      const sj = await sr.json();
+      const sel = $("#style-select");
+      if (sel && sj.styles) {
+        for (const s of sj.styles) {
+          const o = document.createElement("option");
+          o.value = s.name;
+          o.textContent = `${s.name} — ${s.palette}`;
+          sel.appendChild(o);
+        }
+      }
+      if (speed && typeof sj.default_speed === "number") {
+        speed.value = sj.default_speed;
+        speedVal.textContent = sj.default_speed.toFixed(2) + "×";
+      }
+    } catch {}
+  })();
 
   connectSSE();
   loadServices();

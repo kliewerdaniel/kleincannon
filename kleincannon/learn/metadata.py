@@ -64,6 +64,8 @@ def capture(episode: Episode, *,
         "voice": episode.voice,
         "music": music or "none",
         "visual_style": episode.style_suffix[:80] if episode.style_suffix else "cinematic",
+        "style_name": episode.style_name or "",
+        "speed": round(float(episode.speed or 1.0), 4),
         "image_prompts": image_prompts,
         "transition_style": transition,
         "subtitle_style": subtitle_style,
@@ -80,7 +82,7 @@ def capture(episode: Episode, *,
     meta.update(extra)
     # Deterministic content fingerprint (lineage / dedup).
     meta["_fingerprint"] = hashlib.sha1(
-        json.dumps({k: meta[k] for k in ("topic", "script", "voice", "visual_style")},
+        json.dumps({k: meta[k] for k in ("topic", "script", "voice", "visual_style", "style_name")},
                    sort_keys=True, default=str).encode()).hexdigest()[:12]
     return meta
 

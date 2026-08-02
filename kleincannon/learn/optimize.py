@@ -47,7 +47,9 @@ def _v_longer(m: dict) -> dict:
 
 def _v_more_emotional(m: dict) -> dict:
     m = copy.deepcopy(m)
-    m["visual_style"] = "emotional cinematic"
+    # Tag the emotion boost WITHOUT clobbering the real visual_style (the style
+    # catalog/learner owns that field). The bandit still sees the emotion intent
+    # via this flag, and video_features() keeps the style one-hot intact.
     m["_emotion_boost"] = 1.0
     return m
 

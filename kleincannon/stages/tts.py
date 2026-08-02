@@ -175,14 +175,20 @@ def _crossfade(a: np.ndarray, b: np.ndarray, sr: int) -> np.ndarray:
     return np.concatenate([head, cross, body_b])
 
 
-def run(episode_id: str, speed: float = 1.0, voice: str | None = None) -> Episode:
+def run(episode_id: str, voice: str | None = None, speed: float | None = None) -> Episode:
     ep = Episode.load(episode_id)
     if voice:
         ep.voice = voice
-        ep.save()
+    if speed is not None:
+        ep.speed = speed
     if not ep.voice:
         ep.voice = config.DEFAULT_VOICE
-        ep.save()
+    # Speed is a human-in-the-loop pacing knob; default lives in config. Apply it
+    # here so every chunk is synthesized at the requested rate (Qwen3-TTS shortens
+    # the audio for speed > 1.0, so the narration keeps pace without post-stretch).
+    if ep.speed is None or ep.speed <= 0:
+        ep.speed = config.DEFAULT_TTS_SPEED
+    ep.save()
 
     clip = _resolve_voice(ep)
     text = ep.full_script
@@ -191,7 +197,7 @@ def run(episode_id: str, speed: float = 1.0, voice: str | None = None) -> Episod
 
     chunks = _chunks(text)
     print(f"[tts] voicing {len(chunks)} chunk(s) as '{ep.voice}' "
-          f"({len(text.split())} words) via Qwen3-TTS …")
+          f"({len(text.split())} words) via Qwen3-TTS @ {ep.speed:.2f}x …")
 
     ref_text = _transcribe_ref(clip) if clip is not None else None
     if ref_text:
@@ -205,7 +211,7 @@ def run(episode_id: str, speed: float = 1.0, voice: str | None = None) -> Episod
     segments: list[np.ndarray] = []
     try:
         for i, chunk in enumerate(chunks):
-            audio, csr = _synth_chunk(model, chunk, clip, ref_text, speed)
+            audio, csr = _synth_chunk(model, chunk, clip, ref_text, ep.speed)
             sr = csr
             audio = _trim_roomtone(audio, sr)
             segments.append(audio)

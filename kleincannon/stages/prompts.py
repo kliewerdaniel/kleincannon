@@ -9,9 +9,13 @@ from __future__ import annotations
 import json
 import re
 
-from .. import llm
+from .. import llm, config
 from ..episode import Episode
 
+
+# Note: STYLE_SUFFIX is kept only as a last-resort fallback if the style catalog
+# is ever empty. The active look is chosen per-episode from config.STYLE_CATALOG
+# (see _resolve_active_style below) so videos stop all looking the same blue.
 STYLE_SUFFIX = (
     "cinematic editorial photograph, vertical 9:16 composition, shot on 35mm, "
     "shallow depth of field, moody directional window light, desaturated teal and amber "
@@ -47,14 +51,46 @@ _TEXT_TRIGGERS = re.compile(
     r"sign(?:age|s)?|label(?:s|led|ed)?|screen|monitor|display|spreadsheet|chart|"
     r"graph|document|paperwork|invoice|receipt|report|book|newspaper|magazine|"
     r"whiteboard|poster|billboard|logo|brand|dashboard|ui|interface|readable|"
-    r"legible|typography|font)\b",
+    r"legible|typography|font|ticket|lottery|lotto|jackpot|raffle|gamble|casino|"
+    r"bet|odds|prize|payout|fortune|millionaire|coin|cash|money|banknote|bank|"
+    r"bill|dollar|cent|price|cost|pay|paid|tax|taxes|slip|card|scratch|"
+    r"percent|million|billion|thousand|hundred|math|equation|score|statistic|"
+    r"data|table|second|seconds|minute|minutes|hour|hours|year|years|day|days|"
+    r"win|won|winning|chance|imagine|imagining|hoping|hope)\b",
     re.IGNORECASE,
 )
+
+# When a beat is about numbers, money, odds, or time-at-scale, literal prompts
+# make FLUX.2-klein render garbled text on tickets/coins/screens/banknotes. We
+# depict the feeling abstractly instead — always text-free.
+_NUMERIC = re.compile(r"\b\d+(?:[.,]\d+)*\b|%|percent")
+_DANGER = re.compile(
+    r"\b(lottery|lotto|ticket|jackpot|raffle|gamble|casino|bet|odds|chance|"
+    r"win|won|winning|prize|payout|fortune|millionaire|coin|cash|money|banknote|"
+    r"bank|bill|dollar|cent|price|cost|pay|paid|tax|taxes|slip|scratch|"
+    r"million|billion|thousand|hundred|math|equation|score|statistic|data|"
+    r"second|seconds|minute|minutes|hour|hours|year|years|day|days|"
+    r"imagine|imagining|hoping|hope|lost|never|impossible|vain)\b",
+    re.IGNORECASE,
+)
+
+# Text-free, emotion-led abstract scenes (vary by beat index for shot variety).
+_ABSTRACT = [
+    "a lone figure at a dim counter, a quiet moment before a decision",
+    "a hand pausing, a look of dawning disbelief settling across the face",
+    "a coin caught mid-flip against a dark backdrop, frozen in motion",
+    "a person watching a long endless queue, the futility of sheer scale",
+    "a towering stack of papers shrinking as a hand sweeps most of it away",
+    "a close face in low light, a brief flicker of hope fading into a quiet exhale",
+    "an empty chair by a rain-streaked window, the stillness after a choice",
+    "two open empty hands, palms up, a soft quiet realization",
+]
 
 
 def _fallback_prompts(ep: Episode) -> dict[str, str]:
     """Deterministic prompts derived from the beat text — used when the LLM is
-    unavailable or too slow. No external call, so the pipeline never soft-locks."""
+    unavailable or too slow. No external call, so the pipeline never soft-locks.
+    Numeric / money / odds beats are rendered abstractly to keep text out."""
     shots = [
         "wide establishing shot",
         "medium shot",
@@ -68,16 +104,62 @@ def _fallback_prompts(ep: Episode) -> dict[str, str]:
     out = {}
     for i, b in enumerate(ep.beats):
         angle = shots[i % len(shots)]
+        if _DANGER.search(b.text) or _NUMERIC.search(b.text):
+            out[b.id] = f"{angle}: {_ABSTRACT[i % len(_ABSTRACT)]}"
+            continue
         subject = _TEXT_TRIGGERS.sub(" ", b.text)
         subject = re.sub(r"\s{2,}", " ", subject).strip().rstrip(".")
+        subject = re.sub(r"^(the|a|an|and|but|or|so)\b", "", subject,
+                         flags=re.I).strip()
         subject = subject or f"a person reacting to the moment, beat {i + 1}"
         out[b.id] = f"{angle}: {subject}"
     return out
 
 
-def run(episode_id: str, style_suffix: str = STYLE_SUFFIX,
-        llm_timeout: float = 75.0) -> Episode:
+def _auto_style_name(episode_id: str) -> str:
+    """Name of the catalog style a topic id deterministically maps to."""
+    from ..episode import style_for_id
+    return style_for_id(episode_id).get("name", "auto")
+
+
+def _resolve_active_style(ep: Episode, style_arg: str) -> dict:
+    """Pick the concrete {name, palette, suffix} for this episode.
+
+    Resolution order:
+      1. style_arg is a literal catalog name  -> that entry.
+      2. style_arg is a custom literal string  -> used verbatim as the suffix
+         (style_name recorded as "custom" so the bandit can tell it apart).
+      3. style_arg == "auto" (or empty)        -> deterministic from ep.id via the
+         catalog (stable per topic, varied across topics). A previously-resolved
+         REAL catalog name is kept for re-run consistency; a stale "custom" legacy
+         suffix is NOT reused (that would freeze the look and mislabel it).
+    """
+    from ..episode import resolve_style, style_for_id
+    catalog_names = {entry["name"] for entry in config.STYLE_CATALOG}
+    arg = (style_arg or "").strip()
+    if arg and arg.lower() not in ("auto",):
+        return resolve_style(arg)
+    # auto: keep a real catalog name resolved on a prior run (consistency);
+    # otherwise derive a fresh per-topic look from the catalog.
+    if ep.style_name in catalog_names:
+        for entry in config.STYLE_CATALOG:
+            if entry["name"] == ep.style_name:
+                return dict(entry)
+    return style_for_id(ep.id)
+
+
+def run(episode_id: str, style_suffix: str = "", llm_timeout: float = 75.0) -> Episode:
     ep = Episode.load(episode_id)
+
+    # ---- Resolve the active visual style ---------------------------------
+    # Priority: explicit suffix arg > config.PROMPT_STYLE override > episode.style.
+    # The chosen style is stored on the episode (name + suffix) so the look is
+    # reproducible AND fed to the learning engine (so we can learn which styles win).
+    chosen = _resolve_active_style(ep, style_suffix or config.PROMPT_STYLE)
+    ep.style = chosen["name"] if chosen["name"] not in ("auto",) else ep.style
+    ep.style_name = chosen["name"] if chosen["name"] != "auto" else _auto_style_name(ep.id)
+    ep.style_suffix = chosen["suffix"] or STYLE_SUFFIX
+    ep.save()
 
     beats_payload = [{"id": b.id, "text": b.text} for b in ep.beats]
     user = (
@@ -105,7 +187,7 @@ def run(episode_id: str, style_suffix: str = STYLE_SUFFIX,
     if missing:
         raise SystemExit(f"model skipped beats: {missing}")
 
-    ep.style_suffix = style_suffix
+    ep.style_suffix = ep.style_suffix   # already resolved above
     flagged = []
     for b in ep.beats:
         subject = prompts[b.id].strip().rstrip(".")
@@ -115,7 +197,7 @@ def run(episode_id: str, style_suffix: str = STYLE_SUFFIX,
                 subject = re.sub(rf"\b{re.escape(w)}\b", " ", subject, flags=re.IGNORECASE)
             subject = re.sub(r"\s{2,}", " ", subject).strip().rstrip(".")
             flagged.append((b.id, leftover))
-        b.image_prompt = f"{subject}. {style_suffix}"
+        b.image_prompt = f"{subject}. {ep.style_suffix}"
     ep.save()
 
     print(f"[prompts] {len(ep.beats)} prompts written")

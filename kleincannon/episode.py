@@ -10,6 +10,44 @@ from pathlib import Path
 from . import config
 
 
+def style_for_id(episode_id: str) -> dict:
+    """Deterministically pick a catalog style for an episode id.
+
+    So two runs of the same topic get the SAME look (reproducible, and the
+    learning engine can attribute outcomes to a stable style), but two
+    DIFFERENT topics get DIFFERENT looks — fixing the "everything looks blue"
+    problem. Uses a STABLE hash (hashlib) rather than builtin ``hash()``, which
+    is per-process randomized in Python and would make the choice non-repeatable.
+    Returns a dict with keys: name, palette, suffix.
+    """
+    cat = config.STYLE_CATALOG
+    if not cat:
+        return {"name": "Default", "palette": "",
+                "suffix": getattr(config, "STYLE_SUFFIX", "")}
+    stable = int.from_bytes(
+        __import__("hashlib").md5(episode_id.encode()).digest()[:8], "big")
+    idx = stable % len(cat)
+    return dict(cat[idx])
+
+
+def resolve_style(style: str | None) -> dict:
+    """Resolve a style name (or 'auto') to a catalog entry.
+
+    - None / "" / "auto" / "default" => derive from the episode id at call time
+      (caller passes the id via the helper above).
+    - a matching catalog name => that entry.
+    - anything else => treat as a literal custom suffix.
+    """
+    cat = config.STYLE_CATALOG
+    if not style or style in ("auto", "default"):
+        return {"name": "auto", "palette": "", "suffix": ""}
+    for entry in cat:
+        if entry["name"].lower() == style.lower():
+            return dict(entry)
+    # not found in catalog -> treat the string itself as a custom suffix
+    return {"name": "custom", "palette": "", "suffix": style}
+
+
 def slugify(text: str, maxlen: int = 40) -> str:
     s = re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
     return s[:maxlen].strip("-")
@@ -40,7 +78,10 @@ class Episode:
     purpose: str = ""                 # free-form: what this video is for (no branding logic)
     beats: list[Beat] = field(default_factory=list)
     voice: str = config.DEFAULT_VOICE
-    style_suffix: str = ""
+    speed: float = config.DEFAULT_TTS_SPEED   # TTS playback rate multiplier
+    style: str = "auto"                       # style name | "auto" | custom suffix
+    style_name: str = ""                      # resolved style name (for the learn DB)
+    style_suffix: str = ""                    # resolved style suffix (prompt text)
     cta: str = config.CTA             # optional free-text CTA (never auto-burned)
     voice_audio: str | None = None    # audio/voice.wav
     words: list[dict] = field(default_factory=list)   # whisper word timestamps
