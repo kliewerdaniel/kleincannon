@@ -92,10 +92,10 @@ IMAGE_CFG = None                   # None => workflow default CFG (temperature a
 COMFY_DIR = PROJECTS / "image" / "ComfyUI"
 COMFY_URL = "http://127.0.0.1:8188"
 COMFY_OUTPUT = COMFY_DIR / "output"
-COMFY_WORKFLOW = WORKFLOWS / "klein.json"   # committed in-repo (FLUX.2-klein)
+COMFY_WORKFLOW = WORKFLOWS / "zimageturbo.json"   # committed in-repo (ZImage Turbo)
 # ComfyUI is expected to be RUN BY YOU on http://127.0.0.1:8188 before `kc images`.
-# klein poisons the Apple-Silicon MPS pool when the agent relaunches the server
-# between beats, so we do NOT auto-launch or kill it — we just connect. Flip
+# The image server is a long-lived user process; we do NOT auto-launch or kill it
+# between beats (relaunching can poison the Apple-Silicon MPS pool). Flip
 # COMFY_AUTO_LAUNCH to True if you'd rather the agent launch it (with --lowvram).
 COMFY_AUTO_LAUNCH = False
 COMFY_PYTHON = COMFY_DIR / "main.py"

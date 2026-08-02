@@ -1,0 +1,810 @@
+{
+  "id": "2026-08-02-super-el-nino-winter",
+  "topic": "super el nino winter",
+  "hook": "",
+  "purpose": "",
+  "beats": [
+    {
+      "id": "b01",
+      "text": "This winter, government forecasters say a Super El Ni\u00f1o could rewrite the season across the United States.",
+      "image_prompt": "wide establishing shot: This winter, government forecasters say a Super El Ni\u00f1o could rewrite the season across the United States. vibrant fashion-editorial photograph, vertical 9:16, bold saturated color, glossy studio light, punchy contrast, sharp detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
+      "image": "images/b01.png",
+      "audio_start": 0.0,
+      "audio_end": 7.04,
+      "motion": "in"
+    },
+    {
+      "id": "b02",
+      "text": "An El Ni\u00f1o means the Pacific's warm water slides east, and that quietly shoves the jet stream into a new pattern.",
+      "image_prompt": "medium shot: El Ni\u00f1o means the Pacific's warm water slides east, and that quietly shoves the jet stream into a new pattern. vibrant fashion-editorial photograph, vertical 9:16, bold saturated color, glossy studio light, punchy contrast, sharp detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
+      "image": "images/b02.png",
+      "audio_start": 7.04,
+      "audio_end": 14.64,
+      "motion": "in"
+    },
+    {
+      "id": "b03",
+      "text": "For the southern half of the country, that often means a warmer, drier winter than you would ever expect.",
+      "image_prompt": "close-up detail: For the southern half of the country, that often means a warmer, drier winter than you would ever expect. vibrant fashion-editorial photograph, vertical 9:16, bold saturated color, glossy studio light, punchy contrast, sharp detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
+      "image": "images/b03.png",
+      "audio_start": 14.64,
+      "audio_end": 21.28,
+      "motion": "in"
+    },
+    {
+      "id": "b04",
+      "text": "But the northern tier can get the opposite, a wetter, snowier, more relentless stretch of storms.",
+      "image_prompt": "over-the-shoulder angle: the northern tier can get the opposite, a wetter, snowier, more relentless stretch of storms. vibrant fashion-editorial photograph, vertical 9:16, bold saturated color, glossy studio light, punchy contrast, sharp detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
+      "image": "images/b04.png",
+      "audio_start": 21.28,
+      "audio_end": 27.14,
+      "motion": "in"
+    },
+    {
+      "id": "b05",
+      "text": "The twist is that an El Ni\u00f1o winter does not mean the same thing everywhere, and it is a tilt in the odds, not a promise.",
+      "image_prompt": "low-angle heroic framing: a towering stack of papers shrinking as a hand sweeps most of it away. vibrant fashion-editorial photograph, vertical 9:16, bold saturated color, glossy studio light, punchy contrast, sharp detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
+      "image": "images/b05.png",
+      "audio_start": 27.14,
+      "audio_end": 36.34,
+      "motion": "in"
+    },
+    {
+      "id": "b06",
+      "text": "So before you trust the forecast on your phone, remember the ocean already placed its bet, and the atmosphere is only playing it out.",
+      "image_prompt": "extreme close-up: a close face in low light, a brief flicker of fading into a quiet exhale. vibrant fashion-editorial photograph, vertical 9:16, bold saturated color, glossy studio light, punchy contrast, sharp detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
+      "image": "images/b06.png",
+      "audio_start": 36.34,
+      "audio_end": 44.34,
+      "motion": "in"
+    }
+  ],
+  "voice": "chris",
+  "speed": 1.12,
+  "style": "Vivid Editorial",
+  "style_name": "Vivid Editorial",
+  "style_suffix": "vibrant fashion-editorial photograph, vertical 9:16, bold saturated color, glossy studio light, punchy contrast, sharp detail, absolutely no text, no writing, no signage, no readable screens, no numbers, no logos",
+  "cta": "",
+  "voice_audio": "audio/voice.wav",
+  "words": [
+    {
+      "word": "This",
+      "key": "this",
+      "start": 0.0,
+      "end": 0.2
+    },
+    {
+      "word": "winter,",
+      "key": "winter",
+      "start": 0.2,
+      "end": 0.54
+    },
+    {
+      "word": "government",
+      "key": "government",
+      "start": 0.78,
+      "end": 1.12
+    },
+    {
+      "word": "forecasters",
+      "key": "forecasters",
+      "start": 1.12,
+      "end": 1.82
+    },
+    {
+      "word": "say",
+      "key": "say",
+      "start": 1.82,
+      "end": 2.3
+    },
+    {
+      "word": "a",
+      "key": "a",
+      "start": 2.3,
+      "end": 2.62
+    },
+    {
+      "word": "super",
+      "key": "super",
+      "start": 2.62,
+      "end": 2.96
+    },
+    {
+      "word": "El",
+      "key": "el",
+      "start": 2.96,
+      "end": 3.22
+    },
+    {
+      "word": "Nino",
+      "key": "nino",
+      "start": 3.22,
+      "end": 3.62
+    },
+    {
+      "word": "could",
+      "key": "could",
+      "start": 3.62,
+      "end": 3.94
+    },
+    {
+      "word": "rewrite",
+      "key": "rewrite",
+      "start": 3.94,
+      "end": 4.36
+    },
+    {
+      "word": "the",
+      "key": "the",
+      "start": 4.36,
+      "end": 4.58
+    },
+    {
+      "word": "season",
+      "key": "season",
+      "start": 4.58,
+      "end": 4.9
+    },
+    {
+      "word": "across",
+      "key": "across",
+      "start": 4.9,
+      "end": 5.24
+    },
+    {
+      "word": "the",
+      "key": "the",
+      "start": 5.24,
+      "end": 5.46
+    },
+    {
+      "word": "United",
+      "key": "united",
+      "start": 5.46,
+      "end": 5.66
+    },
+    {
+      "word": "States.",
+      "key": "states",
+      "start": 5.66,
+      "end": 6.2
+    },
+    {
+      "word": "An",
+      "key": "an",
+      "start": 7.04,
+      "end": 7.14
+    },
+    {
+      "word": "El",
+      "key": "el",
+      "start": 7.14,
+      "end": 7.34
+    },
+    {
+      "word": "Nino",
+      "key": "nino",
+      "start": 7.34,
+      "end": 7.7
+    },
+    {
+      "word": "means",
+      "key": "means",
+      "start": 7.7,
+      "end": 7.98
+    },
+    {
+      "word": "the",
+      "key": "the",
+      "start": 7.98,
+      "end": 8.26
+    },
+    {
+      "word": "Pacific's",
+      "key": "pacific's",
+      "start": 8.26,
+      "end": 8.84
+    },
+    {
+      "word": "warm",
+      "key": "warm",
+      "start": 8.84,
+      "end": 9.14
+    },
+    {
+      "word": "water",
+      "key": "water",
+      "start": 9.14,
+      "end": 9.62
+    },
+    {
+      "word": "slides",
+      "key": "slides",
+      "start": 9.62,
+      "end": 10.08
+    },
+    {
+      "word": "east",
+      "key": "east",
+      "start": 10.08,
+      "end": 10.44
+    },
+    {
+      "word": "and",
+      "key": "and",
+      "start": 10.44,
+      "end": 10.84
+    },
+    {
+      "word": "that",
+      "key": "that",
+      "start": 10.84,
+      "end": 11.02
+    },
+    {
+      "word": "quietly",
+      "key": "quietly",
+      "start": 11.02,
+      "end": 11.46
+    },
+    {
+      "word": "shoves",
+      "key": "shoves",
+      "start": 11.46,
+      "end": 11.88
+    },
+    {
+      "word": "the",
+      "key": "the",
+      "start": 11.88,
+      "end": 12.14
+    },
+    {
+      "word": "jet",
+      "key": "jet",
+      "start": 12.14,
+      "end": 12.38
+    },
+    {
+      "word": "stream",
+      "key": "stream",
+      "start": 12.38,
+      "end": 12.8
+    },
+    {
+      "word": "into",
+      "key": "into",
+      "start": 12.8,
+      "end": 13.54
+    },
+    {
+      "word": "a",
+      "key": "a",
+      "start": 13.54,
+      "end": 13.7
+    },
+    {
+      "word": "new",
+      "key": "new",
+      "start": 13.7,
+      "end": 13.86
+    },
+    {
+      "word": "pattern.",
+      "key": "pattern",
+      "start": 13.86,
+      "end": 14.24
+    },
+    {
+      "word": "For",
+      "key": "for",
+      "start": 14.64,
+      "end": 14.88
+    },
+    {
+      "word": "the",
+      "key": "the",
+      "start": 14.88,
+      "end": 15.06
+    },
+    {
+      "word": "southern",
+      "key": "southern",
+      "start": 15.06,
+      "end": 15.24
+    },
+    {
+      "word": "half",
+      "key": "half",
+      "start": 15.24,
+      "end": 15.62
+    },
+    {
+      "word": "of",
+      "key": "of",
+      "start": 15.62,
+      "end": 15.8
+    },
+    {
+      "word": "the",
+      "key": "the",
+      "start": 15.8,
+      "end": 15.94
+    },
+    {
+      "word": "country,",
+      "key": "country",
+      "start": 15.94,
+      "end": 16.42
+    },
+    {
+      "word": "that",
+      "key": "that",
+      "start": 17.02,
+      "end": 17.26
+    },
+    {
+      "word": "often",
+      "key": "often",
+      "start": 17.26,
+      "end": 17.68
+    },
+    {
+      "word": "means",
+      "key": "means",
+      "start": 17.68,
+      "end": 18.02
+    },
+    {
+      "word": "a",
+      "key": "a",
+      "start": 18.02,
+      "end": 18.18
+    },
+    {
+      "word": "warmer,",
+      "key": "warmer",
+      "start": 18.18,
+      "end": 18.5
+    },
+    {
+      "word": "drier",
+      "key": "drier",
+      "start": 18.5,
+      "end": 19.02
+    },
+    {
+      "word": "winter",
+      "key": "winter",
+      "start": 19.02,
+      "end": 19.26
+    },
+    {
+      "word": "than",
+      "key": "than",
+      "start": 19.26,
+      "end": 19.7
+    },
+    {
+      "word": "you",
+      "key": "you",
+      "start": 19.7,
+      "end": 19.84
+    },
+    {
+      "word": "would",
+      "key": "would",
+      "start": 19.84,
+      "end": 19.96
+    },
+    {
+      "word": "ever",
+      "key": "ever",
+      "start": 19.96,
+      "end": 20.2
+    },
+    {
+      "word": "expect.",
+      "key": "expect",
+      "start": 20.2,
+      "end": 20.64
+    },
+    {
+      "word": "But",
+      "key": "but",
+      "start": 21.28,
+      "end": 21.6
+    },
+    {
+      "word": "the",
+      "key": "the",
+      "start": 21.6,
+      "end": 21.8
+    },
+    {
+      "word": "northern",
+      "key": "northern",
+      "start": 21.8,
+      "end": 22.1
+    },
+    {
+      "word": "tier",
+      "key": "tier",
+      "start": 22.1,
+      "end": 22.4
+    },
+    {
+      "word": "can",
+      "key": "can",
+      "start": 22.4,
+      "end": 22.64
+    },
+    {
+      "word": "get",
+      "key": "get",
+      "start": 22.64,
+      "end": 22.82
+    },
+    {
+      "word": "the",
+      "key": "the",
+      "start": 22.82,
+      "end": 23.0
+    },
+    {
+      "word": "opposite.",
+      "key": "opposite",
+      "start": 23.0,
+      "end": 23.32
+    },
+    {
+      "word": "A",
+      "key": "a",
+      "start": 23.74,
+      "end": 23.78
+    },
+    {
+      "word": "wetter,",
+      "key": "wetter",
+      "start": 23.78,
+      "end": 24.22
+    },
+    {
+      "word": "snowier,",
+      "key": "snowier",
+      "start": 24.28,
+      "end": 24.78
+    },
+    {
+      "word": "more",
+      "key": "more",
+      "start": 25.42,
+      "end": 25.72
+    },
+    {
+      "word": "relentless",
+      "key": "relentless",
+      "start": 25.72,
+      "end": 26.24
+    },
+    {
+      "word": "stretch",
+      "key": "stretch",
+      "start": 26.24,
+      "end": 26.72
+    },
+    {
+      "word": "of",
+      "key": "of",
+      "start": 26.72,
+      "end": 26.94
+    },
+    {
+      "word": "storm.",
+      "key": "storm",
+      "start": 26.94,
+      "end": 27.1
+    },
+    {
+      "word": "The",
+      "key": "the",
+      "start": 27.14,
+      "end": 27.28
+    },
+    {
+      "word": "twist",
+      "key": "twist",
+      "start": 27.28,
+      "end": 27.56
+    },
+    {
+      "word": "is",
+      "key": "is",
+      "start": 27.56,
+      "end": 28.0
+    },
+    {
+      "word": "that",
+      "key": "that",
+      "start": 28.0,
+      "end": 28.28
+    },
+    {
+      "word": "an",
+      "key": "an",
+      "start": 28.28,
+      "end": 28.52
+    },
+    {
+      "word": "El",
+      "key": "el",
+      "start": 28.52,
+      "end": 28.68
+    },
+    {
+      "word": "Nino",
+      "key": "nino",
+      "start": 28.68,
+      "end": 29.0
+    },
+    {
+      "word": "winter",
+      "key": "winter",
+      "start": 29.0,
+      "end": 29.4
+    },
+    {
+      "word": "does",
+      "key": "does",
+      "start": 29.4,
+      "end": 29.66
+    },
+    {
+      "word": "not",
+      "key": "not",
+      "start": 29.66,
+      "end": 29.9
+    },
+    {
+      "word": "mean",
+      "key": "mean",
+      "start": 29.9,
+      "end": 30.08
+    },
+    {
+      "word": "the",
+      "key": "the",
+      "start": 30.08,
+      "end": 30.28
+    },
+    {
+      "word": "same",
+      "key": "same",
+      "start": 30.28,
+      "end": 30.48
+    },
+    {
+      "word": "thing",
+      "key": "thing",
+      "start": 30.48,
+      "end": 30.78
+    },
+    {
+      "word": "everywhere.",
+      "key": "everywhere",
+      "start": 30.78,
+      "end": 31.34
+    },
+    {
+      "word": "And",
+      "key": "and",
+      "start": 32.0,
+      "end": 32.06
+    },
+    {
+      "word": "it",
+      "key": "it",
+      "start": 32.06,
+      "end": 32.28
+    },
+    {
+      "word": "is",
+      "key": "is",
+      "start": 32.28,
+      "end": 32.88
+    },
+    {
+      "word": "a",
+      "key": "a",
+      "start": 32.88,
+      "end": 33.18
+    },
+    {
+      "word": "tilt",
+      "key": "tilt",
+      "start": 33.18,
+      "end": 33.58
+    },
+    {
+      "word": "in",
+      "key": "in",
+      "start": 33.58,
+      "end": 34.26
+    },
+    {
+      "word": "the",
+      "key": "the",
+      "start": 34.26,
+      "end": 34.44
+    },
+    {
+      "word": "odds,",
+      "key": "odds",
+      "start": 34.44,
+      "end": 34.84
+    },
+    {
+      "word": "not",
+      "key": "not",
+      "start": 34.98,
+      "end": 35.32
+    },
+    {
+      "word": "a",
+      "key": "a",
+      "start": 35.32,
+      "end": 35.46
+    },
+    {
+      "word": "promise.",
+      "key": "promise",
+      "start": 35.46,
+      "end": 35.8
+    },
+    {
+      "word": "So",
+      "key": "so",
+      "start": 36.34,
+      "end": 36.52
+    },
+    {
+      "word": "before",
+      "key": "before",
+      "start": 36.52,
+      "end": 36.84
+    },
+    {
+      "word": "you",
+      "key": "you",
+      "start": 36.84,
+      "end": 37.02
+    },
+    {
+      "word": "trust",
+      "key": "trust",
+      "start": 37.02,
+      "end": 37.28
+    },
+    {
+      "word": "the",
+      "key": "the",
+      "start": 37.28,
+      "end": 37.48
+    },
+    {
+      "word": "forecast",
+      "key": "forecast",
+      "start": 37.48,
+      "end": 37.86
+    },
+    {
+      "word": "on",
+      "key": "on",
+      "start": 37.86,
+      "end": 38.2
+    },
+    {
+      "word": "your",
+      "key": "your",
+      "start": 38.2,
+      "end": 38.34
+    },
+    {
+      "word": "phone,",
+      "key": "phone",
+      "start": 38.34,
+      "end": 38.78
+    },
+    {
+      "word": "remember",
+      "key": "remember",
+      "start": 39.28,
+      "end": 39.5
+    },
+    {
+      "word": "the",
+      "key": "the",
+      "start": 39.5,
+      "end": 39.74
+    },
+    {
+      "word": "ocean",
+      "key": "ocean",
+      "start": 39.74,
+      "end": 40.04
+    },
+    {
+      "word": "already",
+      "key": "already",
+      "start": 40.04,
+      "end": 40.4
+    },
+    {
+      "word": "placed",
+      "key": "placed",
+      "start": 40.4,
+      "end": 40.72
+    },
+    {
+      "word": "its",
+      "key": "its",
+      "start": 40.72,
+      "end": 41.02
+    },
+    {
+      "word": "bet",
+      "key": "bet",
+      "start": 41.02,
+      "end": 41.32
+    },
+    {
+      "word": "and",
+      "key": "and",
+      "start": 41.32,
+      "end": 42.0
+    },
+    {
+      "word": "the",
+      "key": "the",
+      "start": 42.0,
+      "end": 42.26
+    },
+    {
+      "word": "atmosphere",
+      "key": "atmosphere",
+      "start": 42.26,
+      "end": 42.98
+    },
+    {
+      "word": "is",
+      "key": "is",
+      "start": 42.98,
+      "end": 43.34
+    },
+    {
+      "word": "only",
+      "key": "only",
+      "start": 43.34,
+      "end": 43.58
+    },
+    {
+      "word": "playing",
+      "key": "playing",
+      "start": 43.58,
+      "end": 44.0
+    },
+    {
+      "word": "it",
+      "key": "it",
+      "start": 44.0,
+      "end": 44.24
+    },
+    {
+      "word": "out.",
+      "key": "out",
+      "start": 44.24,
+      "end": 44.34
+    }
+  ],
+  "final": "2026-08-02-super-el-nino-winter.mp4"
+}

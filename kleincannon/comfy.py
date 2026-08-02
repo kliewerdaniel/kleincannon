@@ -1,4 +1,4 @@
-"""ComfyUI client for the FLUX.2-klein GGUF workflow.
+"""ComfyUI client for the ZImage Turbo / FLUX.2-klein image workflows.
 
 Loads the in-repo UI workflow (klein.json), converts it to the /prompt API graph,
 patches the prompt text / seed / latent size, queues it, polls /history, and
@@ -25,15 +25,25 @@ from . import config
 
 CLIENT_ID = str(uuid.uuid4())
 
-# Node types in the klein workflow we patch by.
-N_POS = "CLIPTextEncode"          # positive prompt (first CLIPTextEncode)
-N_NEG = "CLIPTextEncode"          # negative prompt (the empty one)
+# Node types we patch, by provider. The workflow is provider-specific:
+#   - ZImage Turbo: KSampler (seed/steps/cfg) + EmptySD3LatentImage +
+#     ConditioningZeroOut (negative) + SaveImage
+#   - FLUX.2-klein (legacy): Flux2Scheduler + CFGGuider + SamplerCustomAdvanced +
+#     EmptyFlux2LatentImage (+ PrimitiveInt width/height) + RandomNoise +
+#     CLIPTextEncode(negative="") + Image Saver Simple
+# build_prompt() detects which node types are present and patches only those.
+N_POS = "CLIPTextEncode"          # positive prompt (non-empty CLIPTextEncode)
+N_NEG = "CLIPTextEncode"          # negative prompt (empty CLIPTextEncode) — legacy
 N_LATENT = "EmptyFlux2LatentImage"
-N_SCHED = "Flux2Scheduler"
+N_LATENT_SD3 = "EmptySD3LatentImage"   # ZImage Turbo latent
+N_SCHED = "Flux2Scheduler"        # legacy scheduler (carries steps + width/height)
+N_KSAMPLER = "KSampler"           # ZImage Turbo sampler (seed/steps/cfg)
 N_NOISE = "RandomNoise"
 N_PRIMITIVE = "PrimitiveInt"      # width/height (two of them: width then height)
 N_LORA = "Lora Loader (LoraManager)"
-N_CFG = "CFGGuider"               # cfg scale
+N_CFG = "CFGGuider"               # cfg scale (legacy)
+N_ZERO_OUT = "ConditioningZeroOut"   # ZImage Turbo negative (no text field)
+N_SAVE = "SaveImage"              # ZImage Turbo saver (built-in)
 
 
 # ---------------------------------------------------------------- workflow
@@ -120,13 +130,20 @@ def workflow_settings(path: Path | None = None) -> dict:
     if isinstance(raw, dict) and "nodes" not in raw and "links" not in raw:
         # API-format graph
         width = height = steps = cfg = None
+        # dims: EmptySD3LatentImage (ZImage Turbo) or EmptyFlux2LatentImage (legacy)
         for n in raw.values():
             ct = n.get("class_type")
-            if ct == "EmptyFlux2LatentImage":
+            if ct in ("EmptySD3LatentImage", "EmptyFlux2LatentImage"):
                 width, height = n["inputs"].get("width"), n["inputs"].get("height")
-            elif ct == "Flux2Scheduler":
+        # steps/cfg: KSampler (ZImage Turbo) overrides legacy Flux2Scheduler/CFGGuider
+        for n in raw.values():
+            ct = n.get("class_type")
+            if ct == "KSampler":
                 steps = n["inputs"].get("steps")
-            elif ct == "CFGGuider":
+                cfg = n["inputs"].get("cfg")
+            elif ct == "Flux2Scheduler" and steps is None:
+                steps = n["inputs"].get("steps")
+            elif ct == "CFGGuider" and cfg is None:
                 cfg = n["inputs"].get("cfg")
         if width is None:  # fall back to PrimitiveInt width/height nodes
             for n in raw.values():
@@ -162,11 +179,19 @@ def _by_type(api: dict, class_type: str) -> list[str]:
 def build_prompt(api: dict, positive: str, negative: str, seed: int,
                  width: int | None = None, height: int | None = None,
                  steps: int | None = None, cfg: float | None = None) -> dict:
-    """Patch the klein graph: prompts, seed, latent size, steps, cfg."""
+    """Patch the workflow graph: prompts, seed, latent size, steps, cfg.
+
+    Provider-agnostic. Detects which node types are present and patches only
+    those, so the same code drives both the ZImage Turbo graph (KSampler +
+    EmptySD3LatentImage + ConditioningZeroOut) and the legacy FLUX.2-klein graph
+    (Flux2Scheduler + CFGGuider + EmptyFlux2LatentImage + RandomNoise).
+    """
     graph = json.loads(json.dumps(api))
 
     # positive = the CLIPTextEncode whose text is non-empty in the original;
-    # negative = the empty one. Decide by current widget text.
+    # negative (legacy) = the empty CLIPTextEncode. ZImage Turbo has no negative
+    # text field (ConditioningZeroOut), so `negative` is applied only where a
+    # text field exists.
     pos_nodes = _by_type(graph, N_POS)
     pos_id = neg_id = None
     for nid in pos_nodes:
@@ -184,17 +209,20 @@ def build_prompt(api: dict, positive: str, negative: str, seed: int,
     if neg_id:
         graph[neg_id]["inputs"]["text"] = negative
 
-    # seed
-    noise = _by_type(graph, N_NOISE)
-    if noise:
-        graph[noise[0]]["inputs"]["noise_seed"] = seed
+    # seed — KSampler (ZImage Turbo) uses inputs["seed"]; legacy uses
+    # RandomNoise.noise_seed. Patch whichever is present.
+    for nid in _by_type(graph, N_KSAMPLER):
+        graph[nid]["inputs"]["seed"] = seed
+    for nid in _by_type(graph, N_NOISE):
+        graph[nid]["inputs"]["noise_seed"] = seed
 
-    # width/height — the working klein graph sets these via two PrimitiveInt
-    # nodes (width=1080, height=1920) whose values feed the latent and
-    # scheduler through links. We set the PrimitiveInt inputs["value"] so
-    # the linked nodes pick up the requested dims; we also force-set the
-    # literal nodes (EmptyFlux2LatentImage / Flux2Scheduler) for good measure.
+    # width/height — KSampler-era graphs size via EmptySD3LatentImage (or
+    # EmptyFlux2LatentImage) + optional PrimitiveInt width/height nodes. Force
+    # the literal latent nodes; also the legacy scheduler which carries w/h.
     if width is not None and height is not None:
+        for nid in _by_type(graph, N_LATENT_SD3) + _by_type(graph, N_LATENT):
+            graph[nid]["inputs"]["width"] = width
+            graph[nid]["inputs"]["height"] = height
         prims = _by_type(graph, N_PRIMITIVE)
         for nid in prims:
             cur = graph[nid].get("inputs", {}).get("value")
@@ -203,22 +231,23 @@ def build_prompt(api: dict, positive: str, negative: str, seed: int,
                     graph[nid]["inputs"]["value"] = width
                 elif cur == config.GEN_HEIGHT:
                     graph[nid]["inputs"]["value"] = height
-                elif cur not in (config.GEN_WIDTH, config.GEN_HEIGHT):
-                    # already a non-default size from a custom workflow; leave it
-                    pass
-        for nid in _by_type(graph, N_LATENT):
-            graph[nid]["inputs"]["width"] = width
-            graph[nid]["inputs"]["height"] = height
         for nid in _by_type(graph, N_SCHED):
             graph[nid]["inputs"]["width"] = width
             graph[nid]["inputs"]["height"] = height
 
-    # steps (Flux2Scheduler) / cfg (CFGGuider) — only if the caller overrides
+    # steps / cfg — only if the caller overrides. ZImage Turbo carries them on
+    # the KSampler; legacy on Flux2Scheduler (steps) / CFGGuider (cfg).
     if steps is not None:
+        for nid in _by_type(graph, N_KSAMPLER):
+            if "steps" in graph[nid]["inputs"]:
+                graph[nid]["inputs"]["steps"] = steps
         for nid in _by_type(graph, N_SCHED):
             if "steps" in graph[nid]["inputs"]:
                 graph[nid]["inputs"]["steps"] = steps
     if cfg is not None:
+        for nid in _by_type(graph, N_KSAMPLER):
+            if "cfg" in graph[nid]["inputs"]:
+                graph[nid]["inputs"]["cfg"] = cfg
         for nid in _by_type(graph, N_CFG):
             if "cfg" in graph[nid]["inputs"]:
                 graph[nid]["inputs"]["cfg"] = cfg
@@ -240,11 +269,16 @@ def build_prompt(api: dict, positive: str, negative: str, seed: int,
 
 def _fix_model_names(graph: dict) -> None:
     """Remap the static workflow's model filenames to what the live ComfyUI
-    server actually has on disk (strips the 'FLUX.2/' subdir prefix the saved
-    UI workflow used, and downgrades the unet from Q8 to the present Q4)."""
+    server actually has on disk. Handles both providers:
+      - FLUX.2-klein (legacy): strips the 'FLUX.2/' subdir prefix + downgrades
+        the unet from Q8 to the present Q4.
+      - ZImage Turbo: the committed graph already names real files
+        (z_image_turbo_bf16.safetensors / ae.safetensors / qwen_3_4b.safetensors);
+        this is a no-op for it unless a future export re-adds a prefix."""
     remap = {
         "unet_name": {
             "FLUX.2/flux-2-klein-4b-Q8_0.gguf": "flux-2-klein-4b-Q4_K_M.gguf",
+            "z_image_turbo-Q8_0.gguf": "z_image_turbo_bf16.safetensors",
         },
         "clip_name": {
             "FLUX.2/qwen_3_4b.safetensors": "qwen_3_4b.safetensors",
@@ -261,20 +295,28 @@ def _fix_model_names(graph: dict) -> None:
 
 
 def _patch_save_nodes(graph: dict, seed: int) -> None:
-    """The custom 'Image Saver Simple' node exposes its settings as widget-only
-    inputs that ui_to_api() drops. Re-inject the required inputs from the live
-    /object_info schema so ComfyUI validation passes and writes a named file.
+    """Make the save node write a deterministic, non-colliding filename.
 
-    We route each render into a size-specific subfolder (e.g. "1080x1920") so a
-    re-run at a different resolution writes a NON-colliding filename. Without
-    this, ComfyUI's execution cache serves the previous run's file (same seed +
-    same graph hash) and a native re-render silently returns the old low-res
-    image — which is exactly why `--force` produced stale 528x960 frames.
+    Two save-node kinds are supported:
+      - "Image Saver Simple" (legacy klein custom node): widget-only inputs that
+        ui_to_api() drops, so re-inject them and route into a size-specific
+        subfolder so a re-run at a different resolution doesn't serve a stale
+        cached file.
+      - "SaveImage" (built-in, ZImage Turbo): already valid; we only set its
+        filename_prefix to a seed-specific value so re-renders with --force at
+        the same seed don't collide on the ComfyUI execution cache. It writes
+        "<prefix>_00001.png" into the output root (no subfolder).
     """
+    # built-in SaveImage (ZImage Turbo): set a seed-specific prefix.
+    for node in graph.values():
+        if node["class_type"] == "SaveImage":
+            node["inputs"]["filename_prefix"] = f"z{seed}"
+
+    # legacy Image Saver Simple
     dims = "render"
     try:
         for node in graph.values():
-            if node["class_type"] == "EmptyFlux2LatentImage":
+            if node["class_type"] in ("EmptyFlux2LatentImage", "EmptySD3LatentImage"):
                 w = node["inputs"].get("width")
                 h = node["inputs"].get("height")
                 if w and h:
@@ -457,24 +499,36 @@ class ComfyServerDied(Exception):
 
 
 def _save_subfolder(graph: dict | None, seed: int) -> str:
-    """Read the save node's subfolder ('path') from the graph, or discover the
-    real file via /history on crash. Falls back to a size-named guess."""
+    """Read the save node's subfolder ('path') from the graph.
+
+    - "Image Saver Simple" (legacy): uses 'path'.
+    - "SaveImage" (ZImage Turbo): writes to the output root (no subfolder).
+    Falls back to "" (output root).
+    """
     if graph:
         for node in graph.values():
             if node["class_type"] == "Image Saver Simple":
                 p = node["inputs"].get("path")
                 if isinstance(p, str) and p:
                     return p
-    return "render"
+    return ""
 
 
 def _out_file(seed: int, subfolder: str = "") -> Path:
-    # "Image Saver Simple" writes filename=f"klein_{seed}" extension="png".
-    # ComfyUI appends a _NNNN counter on collision, so glob for the newest
-    # klein_{seed}*.png under the render subfolder.
+    """Locate the freshly rendered file for this seed.
+
+    - ZImage Turbo (SaveImage): prefix "z{seed}" -> "z{seed}_00001.png" in the
+      output root (ComfyUI appends a _NNNN counter on collision).
+    - Legacy (Image Saver Simple): "klein_{seed}*.png" under the render subfolder.
+    Glob for the newest match of either pattern so a re-render lands on the new
+    file even if the ComfyUI execution cache served a stale one.
+    """
     base = config.COMFY_OUTPUT / subfolder if subfolder else config.COMFY_OUTPUT
-    matches = sorted(base.glob(f"klein_{seed}*.png"), key=lambda p: p.stat().st_mtime)
-    return matches[-1] if matches else base / f"klein_{seed}.png"
+    matches = sorted(
+        list(base.glob(f"z{seed}*.png")) + list(base.glob(f"klein_{seed}*.png")),
+        key=lambda p: p.stat().st_mtime,
+    )
+    return matches[-1] if matches else base / f"z{seed}.png"
 
 
 def wait(prompt_id: str, seed: int, dest: Path, timeout: int = 900,

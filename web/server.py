@@ -126,7 +126,7 @@ def _run_pipeline(p: RunParams) -> str:
         stage("prompts", "Composing image prompts")
         prompts.run(eid, style_suffix=p.style or "auto")
 
-        stage("images", "Rendering visuals (FLUX.2-klein via ComfyUI)")
+        stage("images", "Rendering visuals (ZImage Turbo via ComfyUI)")
         images.run(eid, fast=p.fast,
                    seed=config.IMAGE_SEED, steps=config.IMAGE_STEPS, cfg=config.IMAGE_CFG)
 

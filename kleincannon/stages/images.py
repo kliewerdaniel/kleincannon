@@ -1,4 +1,4 @@
-"""Stage 5 — render one image per beat with FLUX.2-klein via ComfyUI.
+"""Stage 5 — render one image per beat with the configured ComfyUI workflow.
 
 Drives the in-repo klein.json workflow. ComfyUI is auto-launched if needed
 (see comfy.ensure_server). Images are written to images/<beat>.png and the
@@ -36,7 +36,7 @@ def run(episode_id: str, fast: bool = False, force: bool = False,
 
     workflow = comfy.load_workflow()
     w, h = _dims(fast)
-    print(f"[images] FLUX.2-klein  {w}x{h}  fast={fast}  "
+    print(f"[images] ZImage Turbo  {w}x{h}  fast={fast}  "
           f"(native {config.GEN_WIDTH}x{config.GEN_HEIGHT})")
 
     for i, beat in enumerate(ep.beats):
@@ -51,10 +51,10 @@ def run(episode_id: str, fast: bool = False, force: bool = False,
         s = seed if seed is not None else 1000 + i * 137
         print(f"  {beat.id}  rendering (seed {s}) …")
         # ComfyUI is run by the user (COMFY_AUTO_LAUNCH=False): one long-lived
-        # server on :8188, never relaunched between beats (relaunching poisons the
-        # Apple-Silicon MPS pool and makes FLUX.2-klein crash at step 0). We just
-        # queue the job and wait for the save node's file to land on disk. If a
-        # connection drops we retry against the SAME server rather than killing it.
+        # server on :8188, never relaunched between beats (relaunching can poison
+        # the Apple-Silicon MPS pool). We just queue the job and wait for the save
+        # node's file to land on disk. If a connection drops we retry against the
+        # SAME server rather than killing it.
         max_attempts = 4
         for attempt in range(1, max_attempts + 1):
             if not comfy.is_up():
