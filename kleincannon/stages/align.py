@@ -72,6 +72,28 @@ def map_beats(ep: Episode, words: list[dict]) -> None:
         ep.beats[i].audio_end = ep.beats[i + 1].audio_start
 
 
+def needs_realign(ep: Episode) -> bool:
+    """True when the voice audio is newer than the saved manifest.
+
+    That means the manifest's word timings are stale and `align` must be
+    re-run before `captions`/`build` — otherwise captions desync from the
+    speech and the build truncates the narration to the old duration.
+
+    This is what bit us: after the TTS ref-text fix regenerated `voice.wav`
+    nobody re-ran `align`, so the manifest kept the old timings. Stages that
+    consume the manifest now call this and auto-realign instead of using
+    stale data.
+    """
+    wav = ep.dir / ep.voice_audio if ep.voice_audio else None
+    if not wav or not wav.exists():
+        return False
+    if not ep.manifest_path.exists():
+        return True
+    # +1s grace so a re-save that lands microseconds after the wav doesn't
+    # flip the flag (save happens right after synthesis in tts.run).
+    return wav.stat().st_mtime > ep.manifest_path.stat().st_mtime + 1.0
+
+
 def run(episode_id: str) -> Episode:
     ep = Episode.load(episode_id)
     if not ep.voice_audio:

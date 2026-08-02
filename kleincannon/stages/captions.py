@@ -84,6 +84,14 @@ def _fit_layout(height: int, lines: list[str], sample_font: ImageFont.FreeTypeFo
 
 def run(episode_id: str) -> Episode:
     ep = Episode.load(episode_id)
+    # The manifest's word timings must match the current voice.wav. If TTS was
+    # re-run since the last align, the saved timings are stale (captions would
+    # desync from the speech) — realign before captioning.
+    import kleincannon.stages.align as align_stage
+    if align_stage.needs_realign(ep):
+        print("[captions] voice.wav newer than manifest — realigning first …")
+        align_stage.run(episode_id)
+        ep = Episode.load(episode_id)
     words = _word_timings(ep)
     if not words:
         raise SystemExit("no words to caption — run tts + align first")

@@ -168,6 +168,50 @@ def _f5_python(clip: Path, ref_text: str, text: str, out: Path) -> None:
     tmp.unlink(missing_ok=True)
 
 
+def _trim_silence(src: Path, dst: Path, max_trim: float = 1.2) -> None:
+    """Strip leading/trailing room-tone from a synthesized clause.
+
+    F5-TTS pads each clause with a bit of silence at the very start and ~1s of
+    trailing silence. Left in, those gaps become audible dead-air pauses at
+    every beat boundary. The ffmpeg `silenceremove` filter is unreliable here
+    (it can swallow the whole clause), so we detect the first/last sample that
+    crosses a small amplitude floor and slice the WAV directly — capping the
+    trimmed amount so a quiet clause is never truncated to nothing.
+
+    If anything goes wrong we copy the untrimmed file so the pipeline still
+    produces audio.
+    """
+    try:
+        import numpy as np
+        import soundfile as sf
+
+        data, sr = sf.read(str(src), dtype="float32")
+        if data.ndim > 1:
+            data = data[:, 0]
+        n = len(data)
+        # amplitude floor in linear terms (-45 dBFS)
+        floor = 10 ** (-45 / 20)
+        above = np.abs(data) > floor
+        # find first / last non-silent sample
+        idx = np.nonzero(above)[0]
+        if len(idx) == 0:
+            shutil.copy(src, dst)  # pure silence -> keep as-is
+            return
+        first, last = int(idx[0]), int(idx[-1])
+        # cap how much we trim from each end
+        first = min(first, int(max_trim * sr))
+        tail = n - 1 - last
+        tail = min(tail, int(max_trim * sr))
+        start = first
+        end = n - tail
+        if end <= start:
+            shutil.copy(src, dst)
+            return
+        sf.write(str(dst), data[start:end], sr)
+    except Exception:
+        shutil.copy(src, dst)
+
+
 def _synth(clip: Path, transcript: Path, text: str, out: Path, model_dir: Path) -> None:
     ref_text = _ref_text(clip, transcript)
     if shutil.which(config.F5_BIN):
@@ -204,7 +248,11 @@ def run(episode_id: str, speed: float = 1.0, voice: str | None = None) -> Episod
             _synth(clip, transcript, chunk, out, config.F5_MODEL_DIR)
             if not out.exists():
                 raise SystemExit(f"TTS produced no audio for chunk {i}: {chunk[:40]!r}")
-            wavs.append(out)
+            # Trim the model's leading/trailing room-tone so there is no dead
+            # air at beat boundaries once the clauses are concatenated.
+            trimmed = tmp_dir / f"t{i:02d}.wav"
+            _trim_silence(out, trimmed)
+            wavs.append(trimmed)
 
         # Concatenate chunks into one voice.wav with ffmpeg (also applies speed).
         dest = ep.audio_dir / "voice.wav"

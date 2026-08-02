@@ -21,7 +21,7 @@ from pathlib import Path
 from .. import config
 from ..episode import Episode
 
-KENBURN_FRAMES = 90   # smoothing for zoompan (3s of motion @30fps internally)
+KENBURN_FRAMES = 90   # used only as a floor; real motion spans the full beat
 
 
 def _probe_image_size(ep: Episode) -> tuple[int, int]:
@@ -35,23 +35,29 @@ def _probe_image_size(ep: Episode) -> tuple[int, int]:
     return config.GEN_WIDTH, config.GEN_HEIGHT
 
 
-def _kenburns(beat, w: int, h: int) -> str:
-    """zoompan expression for one beat's motion direction."""
+def _kenburns(beat, w: int, h: int, beat_frames: float) -> str:
+    """Continuous Ken Burns for one beat.
+
+    Motion spans the WHOLE beat duration (no static hold), so there is never a
+    frozen frame. Beats alternate push-in / push-out so a cut lands on a moving
+    frame at a different zoom — keeping motion continuous across the edit.
+    """
+    n = max(KENBURN_FRAMES, int(round(beat_frames)))
     z = config.ZOOM_MAX
     if beat.motion == "out":
-        # start zoomed in, drift out to 1.0
-        zp = f"min({z},max(1.0,(1.0+({z}-1.0)*(1-(on-1)/{KENBURN_FRAMES}))))"
+        # start zoomed in (z), ease back out to 1.0 by the end
+        zp = f"min({z},max(1.0,(1.0+({z}-1.0)*(1-(on-1)/{n}))))"
         x_expr, y_expr = "iw/2-(iw/zoom/2)", "ih/2-(ih/zoom/2)"
     elif beat.motion == "left":
-        x_expr = f"iw/zoom*((on-1)/{KENBURN_FRAMES})"
+        x_expr = f"iw/zoom*((on-1)/{n})"
         y_expr = "ih/2-(ih/zoom/2)"
         zp = str(z)
     elif beat.motion == "right":
-        x_expr = f"iw/zoom*(1-(on-1)/{KENBURN_FRAMES})"
+        x_expr = f"iw/zoom*(1-(on-1)/{n})"
         y_expr = "ih/2-(ih/zoom/2)"
         zp = str(z)
-    else:  # "in" — classic slow push-in
-        zp = f"min({z},max(1.0,1.0+({z}-1.0)*((on-1)/{KENBURN_FRAMES})))"
+    else:  # "in" — slow continuous push-in across the whole beat
+        zp = f"min({z},max(1.0,1.0+({z}-1.0)*((on-1)/{n})))"
         x_expr, y_expr = "iw/2-(iw/zoom/2)", "ih/2-(ih/zoom/2)"
 
     return (
@@ -84,7 +90,8 @@ def _build_command(ep: Episode) -> list[str]:
         if not b.image:
             continue
         dur = max(0.5, b.duration)
-        kb = _kenburns(b, w, h)
+        beat_frames = dur * config.FPS
+        kb = _kenburns(b, w, h, beat_frames)
         filters.append(
             f"[{i}:v]trim=duration={dur:.3f},setpts=PTS-STARTPTS,"
             f"fps={config.FPS},{kb},format=yuv420p[v{i}]"
@@ -141,6 +148,13 @@ def _build_command(ep: Episode) -> list[str]:
 
 def run(episode_id: str) -> Episode:
     ep = Episode.load(episode_id)
+    # Manifest must reflect the current voice.wav length — otherwise the build
+    # trims to a stale duration and the narration is cut off mid-sentence.
+    import kleincannon.stages.align as align_stage
+    if align_stage.needs_realign(ep):
+        print("[assemble] voice.wav newer than manifest — realigning first …")
+        align_stage.run(episode_id)
+        ep = Episode.load(episode_id)
     missing = [b.id for b in ep.beats if not (b.image and (ep.dir / b.image).exists())]
     if missing:
         raise SystemExit(f"missing images for beats {missing} — run images first")
