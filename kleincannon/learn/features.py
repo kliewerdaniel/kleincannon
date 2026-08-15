@@ -20,7 +20,13 @@ import numpy as np
 
 from .. import config
 
-FEATURE_VERSION = 2  # v2: added per-style one-hot (vid_style_*) + video_speed
+FEATURE_VERSION = 3  # v1: base features; v2: + per-style one-hot + video_speed;
+                     # v3 (P2): + channel + asset_type one-hots for multi-channel learning
+
+# P2: channels the acquisition loop learns across. The SAME bandit transfers
+# signal between them via the shared content-feature subspace.
+CHANNELS = ["tiktok", "x", "linkedin", "blog", "github"]
+ASSET_TYPES = ["short_video", "post", "article", "repo_readme"]
 
 # --- tiny lexicons for content features (no external deps) ---
 _POS = {"good", "great", "best", "love", "amazing", "happy", "win", "free",
@@ -123,6 +129,21 @@ def posting_features(meta: dict[str, Any]) -> dict[str, float]:
     return out
 
 
+def channel_features(meta: dict[str, Any]) -> dict[str, float]:
+    """P2: which channel + asset type the experience targets.
+
+    One-hots over CHANNELS / ASSET_TYPES. Defaults keep the existing video
+    rows backward-compatible (a TikTok short_video). The shared content-feature
+    subspace is what lets the bandit transfer learning across channels.
+    """
+    ch = str(meta.get("channel", "") or "tiktok").strip().lower()
+    at = str(meta.get("asset_type", "") or "short_video").strip().lower()
+    return {
+        **{f"channel_{c}": 1.0 if c == ch else 0.0 for c in CHANNELS},
+        **{f"asset_{a}": 1.0 if a == at else 0.0 for a in ASSET_TYPES},
+    }
+
+
 def creator_features(meta: dict[str, Any]) -> dict[str, float]:
     acct = str(meta.get("poster_account", "") or "default")
     niche = str(meta.get("niche", "") or "general")
@@ -142,6 +163,7 @@ def extract(meta: dict[str, Any]) -> dict[str, float]:
     feats.update(video_features(meta))
     feats.update(posting_features(meta))
     feats.update(creator_features(meta))
+    feats.update(channel_features(meta))  # P2
     return feats
 
 
@@ -158,6 +180,7 @@ def feature_names() -> list[str]:
         "hook": "", "script": "", "title": "", "video_length": 0, "subtitle_style": "",
         "music": "", "posting_day": "Unknown", "posting_time": "", "poster_account": "",
         "niche": "", "topic": "", "style_name": "", "speed": 1.0,
+        "channel": "tiktok", "asset_type": "short_video",  # P2
     }
     return sorted(extract(sample).keys())
 

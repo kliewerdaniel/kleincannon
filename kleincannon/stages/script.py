@@ -54,6 +54,23 @@ def from_ai(topic: str, purpose: str = "", beats: int = 6, voice: str | None = N
             f"PURPOSE: {purpose}\n"
             f"BEATS: {beats}\n\n"
             f"Write a {beats}-beat script.")
+
+    # P1: if the Knowledge Engine is on, ground the monologue in compiled,
+    # provenanced knowledge about the topic (fail-closed — if nothing comes
+    # back, the model proceeds on its own prior).
+    if getattr(config, "USE_KNOWLEDGE_ENGINE", False):
+        try:
+            from . import knowledge as kb
+            block = kb.ground(topic, angle=purpose or "")
+            evidence = kb.format_for_script(block)
+            if evidence:
+                user += (
+                    f"\n\n--- GROUNDED KNOWLEDGE (anchor the script in this; do "
+                    f"not invent beyond it) ---\n{evidence}\n---"
+                )
+        except Exception as e:  # noqa: BLE001 — never block generation on knowledge
+            print(f"[script] knowledge grounding skipped ({type(e).__name__})")
+
     data = llm.chat_json(SYSTEM, user, temperature=0.9)
     raw_beats = data.get("beats") or []
     texts = [str(b).strip() for b in raw_beats if str(b).strip()]
@@ -61,7 +78,19 @@ def from_ai(topic: str, purpose: str = "", beats: int = 6, voice: str | None = N
         raise SystemExit("model returned no beats")
     ep = from_text(topic, texts, purpose=purpose, voice=voice)
     ep.hook = (data.get("hook") or "").strip()
-    ep.save()
+
+    # P1: HITL copy guardrail — flag (never block) risky copy for review.
+    if getattr(config, "USE_KNOWLEDGE_ENGINE", False):
+        try:
+            from . import acquisition as acq
+            flags = acq.check_copy(ep.full_script)
+            if not flags.ok:
+                print(f"[script][HITL] copy flags: {flags.as_dict()}")
+                ep.hitl_flags = flags.as_dict()
+                ep.save()
+        except Exception as e:  # noqa: BLE001
+            print(f"[script][HITL] guardrail skipped ({type(e).__name__})")
+
     print(f"[script] ai script: {len(texts)} beats, hook set")
     return ep
 

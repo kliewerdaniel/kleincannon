@@ -5,6 +5,7 @@ All tunable knobs live here and can be overridden at runtime (web UI / CLI).
 """
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -125,6 +126,18 @@ WIDTH, HEIGHT, FPS = 1080, 1920, 30
 # Native render size of the working klein graph (vertical 9:16, as you exported it).
 GEN_WIDTH, GEN_HEIGHT = 1080, 1920
 
+# Number of IMAGES (shots) rendered per beat. 2 keeps a ~45-60s video visually
+# fresh — each beat's spoken window is split across its shots so no single still
+# holds for 8+ seconds. Bump to 3+ for even faster cutting. prompts.py renders
+# this many topical prompts per beat; images.py renders each; assemble.py
+# splits the beat's duration across them.
+SHOTS_PER_BEAT = 2
+
+# How long the prompts stage will wait for gemma4 before falling back to
+# deterministic local (topic-flavoured) prompts. The LLM can be slow on Apple
+# Silicon, so we cap it rather than block the whole pipeline.
+PROMPTS_LLM_TIMEOUT = 120.0
+
 # Fast/test render profile — low-res + fewer steps so a full end-to-end run
 # finishes in minutes instead of per-frame latency. `kc images --fast` uses it;
 # assembly reads the real rendered size so it cuts together correctly.
@@ -137,10 +150,15 @@ TAIL_SECONDS = 1.2      # silence after last word before video ends
 # 3-word cards: keep the font well under a quarter of frame width so it reads
 # as an accent, not a billboard. ~4-5% of frame height is the sweet spot for
 # 1080-wide verticals (was 7.5% = 144px, which dominated the screen).
-CAPTION_FONT_MAX_FRAC = 0.045   # largest caption font as a fraction of frame height
-CAPTION_FONT_MIN_FRAC = 0.024   # floor so very long lines stay readable
-CAPTION_WIDTH_BUDGET = 0.80     # caption block may use this fraction of frame width
-CAPTION_BLOCK_MAX_FRAC = 0.30    # caption block may use this fraction of frame height
+# Cards are multi-word phrases laid out as wrapped LINES (words side by side),
+# never one word per line, so nothing stacks or overlaps.
+CAPTION_WORDS_PER_CARD = 7      # max words on one caption card
+CAPTION_MAX_CARD_SECONDS = 3.0  # close a card early if it lingers longer than this
+CAPTION_MAX_LINES = 3           # max wrapped lines per card
+CAPTION_FONT_MAX_FRAC = 0.042   # largest caption font as a fraction of frame height
+CAPTION_FONT_MIN_FRAC = 0.022   # floor so very long lines stay readable
+CAPTION_WIDTH_BUDGET = 0.86     # caption block may use this fraction of frame width
+CAPTION_BLOCK_MAX_FRAC = 0.26    # caption block may use this fraction of frame height
 CAPTION_TOP_FRAC = 0.80         # vertical center of the caption block (lower third)
 CAPTION_ACCENT = (0, 229, 255, 255)    # spoken-word colour (cyan)
 CAPTION_WHITE = (255, 255, 255, 255)   # upcoming-word colour (white)
@@ -155,6 +173,17 @@ CRF = 19               # H.264 quality (lower = better, slower)
 ALIGN_MODEL = "small.en"   # faster-whisper model size for word timestamps
 
 CTA = ""               # optional free-text call-to-action; never auto-burned
+
+# --- Knowledge Engine grounding (P1, optional) ---
+# When True, the content stages pull from the Obladaet Knowledge Engine (the
+# white-label Hermes Atlas wrapper) to ground scripts/prompts in compiled,
+# provenanced knowledge about DanielKliewer.com. Off by default so the generic
+# pipeline is unchanged; flip on via config push_overrides / web toggle / env
+# KLEINCANNON_USE_KNOWLEDGE_ENGINE. Fail-closed: if the engine is unavailable
+# the stages proceed ungrounded (no fabrication).
+USE_KNOWLEDGE_ENGINE = os.environ.get("KLEINCANNON_USE_KNOWLEDGE_ENGINE", "").lower() in (
+    "1", "true", "yes",
+)
 
 
 # ----------------------------------------------------------------------------

@@ -42,3 +42,24 @@ __pycache__/
 # the SOURCE package kleincannon/learn/ must stay tracked.
 /learn/
 /learn/pending/
+
+# ---- public-repo hygiene: never push these to a public remote ----
+# agent runtime state (tool outputs, past conversation logs, local state)
+.hermes/
+
+# local scratch / debug dumps
+_dump/
+_dump_src.py
+_ls.txt
+_probe_marker.txt
+probe_term.txt
+probe_write.txt
+
+# local knowledge graph (stays local per D19 — graph never leaves the machine)
+knowledge/
+
+# rendered episode media + local artifacts (3.3GB, machine-local)
+episodes/
+
+# one-off episode build scripts (scratch, not part of the fleet project)
+scripts/

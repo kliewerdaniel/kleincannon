@@ -73,6 +73,7 @@ class RunParams(BaseModel):
     steps: int | None = None
     cfg: float | None = None
     seed: int | None = None
+    use_knowledge: bool = False    # P1: ground content in the Obladaet engine
 
 
 def _apply_overrides(p: RunParams) -> None:
@@ -93,6 +94,7 @@ def _apply_overrides(p: RunParams) -> None:
         "IMAGE_SEED": p.seed,
         "IMAGE_STEPS": p.steps,
         "IMAGE_CFG": p.cfg,
+        "USE_KNOWLEDGE_ENGINE": bool(p.use_knowledge),
     })
 
 
@@ -229,7 +231,23 @@ async def episodes():
     return {"episodes": out}
 
 
-# ---- learning subsystem API ------------------------------------------------
+# ---- knowledge-engine API (P1) --------------------------------------------
+@app.get("/api/knowledge/status")
+async def knowledge_status():
+    from kleincannon import knowledge as kb
+    return {
+        "available": kb.is_available(),
+        "enabled": bool(config.USE_KNOWLEDGE_ENGINE),
+        "index_dir": str(kb.KNOWLEDGE_INDEX_DIR),
+    }
+
+
+@app.post("/api/knowledge/compile")
+async def knowledge_compile(req: Request):
+    from kleincannon import knowledge as kb
+    body = await req.json()
+    roots = body.get("roots")
+    return kb.ensure_compiled(roots)
 @app.get("/api/learn/status")
 async def learn_status():
     from kleincannon.learn import agency
@@ -288,6 +306,44 @@ async def learn_record(req: Request):
         exp_id, metrics,
         mark_uploaded=not body.get("no_mark_uploaded", False),
         video_id=body.get("video_id"))
+
+
+# ---- P2: closed-deal attribution API --------------------------------------
+@app.post("/api/learn/deal")
+async def learn_deal(req: Request):
+    from kleincannon.learn import agency
+    body = await req.json()
+    deal_id = body.get("deal_id")
+    value = body.get("value")
+    if not deal_id or not isinstance(value, (int, float)) or value <= 0:
+        return JSONResponse(status_code=400,
+                            content={"error": "deal_id and positive value required"})
+    return agency.record_deal(
+        deal_id=str(deal_id), value=float(value), offer=body.get("offer", ""),
+        touchpoints=body.get("touchpoints"),
+        attributed_experience_ids=body.get("attributed_experience_ids"),
+        attribution_method=body.get("attribution_method"),
+        confidence=float(body.get("confidence", 1.0)),
+        source_ref=body.get("source_ref", ""))
+
+
+@app.get("/api/learn/conversions")
+async def learn_conversions():
+    from kleincannon.learn import attribution as attr
+    return {"conversions": attr.list_deals(),
+            "attributed_total": round(attr.attributed_total(), 5)}
+
+
+@app.get("/api/learn/attribution/preview")
+async def learn_attribution_preview(deal_id: str):
+    from kleincannon.learn import db
+    store = db.open_db()
+    deal = store.get_conversion(deal_id)
+    store.close()
+    if not deal:
+        return JSONResponse(status_code=404, content={"error": "no such deal"})
+    from kleincannon.learn import attribution as attr
+    return {"deal_id": deal_id, "credits": attr.credit_for(deal)}
 
 
 @app.post("/api/learn/harvest")

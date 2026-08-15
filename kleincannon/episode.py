@@ -65,7 +65,9 @@ class Beat:
     id: str
     text: str
     image_prompt: str | None = None
-    image: str | None = None          # filename inside images/
+    image: str | None = None          # filename inside images/ (legacy single-image path)
+    images: list[str] = field(default_factory=list)  # 1+ filenames inside images/
+    shots: list[str] = field(default_factory=list)    # one image prompt per shot (>=1)
     audio_start: float | None = None
     audio_end: float | None = None
     motion: str = "in"                # in | out | left | right — Ken Burns direction
@@ -75,6 +77,20 @@ class Beat:
         if self.audio_start is None or self.audio_end is None:
             return 0.0
         return self.audio_end - self.audio_start
+
+    @property
+    def all_images(self) -> list[str]:
+        """All rendered image filenames for this beat (multi-shot aware).
+
+        A beat may carry several shots (e.g. 2 images) to keep a longer video
+        visually fresh. We keep the legacy ``image`` field for back-compat with
+        old manifests and stages that read a single image.
+        """
+        if self.images:
+            return list(self.images)
+        if self.image:
+            return [self.image]
+        return []
 
 
 @dataclass
@@ -95,6 +111,7 @@ class Episode:
     final: str | None = None
     image_workflow: str | None = None  # workflow file used for the last image render
                                         # (so a provider swap / config change forces a re-render)
+    hitl_flags: dict = field(default_factory=dict)  # P1: copy-guardrail flags (HITL)
 
     # ---- paths ----
     @property

@@ -67,8 +67,23 @@ def train_from_history() -> dict[str, Any]:
         m = db.open_db().latest_metric(e.id) or {}
         if not m:
             continue
-        r = reward.score(m)
+        r = reward.blended_reward(
+            m, deal_value=e.attributed_value, deal_confidence=1.0)
         fresh.update(e.id, meta, r)
+
+    # P2: seed the bandit's θ with the Obladaet offer-prior before it commits —
+    # biases exploration toward on-brand, offer-relevant assets until real deals
+    # teach otherwise. Anti-overfit, decision-aware; applied only if enabled.
+    prior_cfg = learn_config.obladaet_prior
+    if prior_cfg.get("enabled"):
+        try:
+            from . import knowledge_prior
+            bias = knowledge_prior.offer_feature_bias(
+                strength=float(prior_cfg.get("strength", 0.1)))
+            if bias:
+                fresh.seed_prior(bias, strength=float(prior_cfg.get("strength", 0.1)))
+        except Exception as exc:  # noqa: BLE001 — prior is advisory, never blocking
+            pass
 
     _archive_current()
     fresh_path = engine_path()

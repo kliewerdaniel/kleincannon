@@ -1,10 +1,11 @@
-"""Stage 5 — render one image per beat with the configured ComfyUI workflow.
+"""Stage 5 — render the configured ComfyUI workflow's images (N shots per beat).
 
-Drives the in-repo klein.json workflow. ComfyUI is auto-launched if needed
-(see comfy.ensure_server). Images are written to images/<beat>.png and the
-filename is recorded on the beat so assemble.py / captions.py can find it.
+Drives the in-repo workflow (ZImage Turbo). ComfyUI is auto-launched if needed
+(see comfy.ensure_server). Each shot is written to images/<beat>_s<j>.png and the
+filenames are recorded on the beat (b.images) so assemble.py / captions.py can
+find them.
 
-Resumable: beats whose image already exists are skipped, so an interrupted run
+Resumable: shots whose image already exists are skipped, so an interrupted run
 (or a single-beat re-render) only does the missing work.
 """
 from __future__ import annotations
@@ -26,7 +27,8 @@ def _dims(fast: bool) -> tuple[int, int]:
 
 def run(episode_id: str, fast: bool = False, force: bool = False,
         seed: int | None = None, steps: int | None = None,
-        cfg: float | None = None) -> Episode:
+        cfg: float | None = None,
+        shots_per_beat: int = config.SHOTS_PER_BEAT) -> Episode:
     ep = Episode.load(episode_id)
     if not any(b.image_prompt for b in ep.beats):
         raise SystemExit("run the prompts stage first (no image prompts)")
@@ -47,59 +49,64 @@ def run(episode_id: str, fast: bool = False, force: bool = False,
     stale_provider = (ep.image_workflow is not None
                       and ep.image_workflow != workflow_name)
 
+    import random
     for i, beat in enumerate(ep.beats):
-        if not beat.image_prompt:
-            continue
-        dest = ep.images_dir / f"{beat.id}.png"
-        if dest.exists() and not force and not stale_provider:
-            print(f"  {beat.id}  skip (exists)")
-            beat.image = f"images/{beat.id}.png"
-            continue
-        if dest.exists() and (force or stale_provider):
-            reason = "forced" if force else f"workflow changed ({ep.image_workflow} -> {workflow_name})"
-            print(f"  {beat.id}  re-render ({reason})")
-
-        s = seed if seed is not None else 1000 + i * 137
-        if force or stale_provider:
+        if not beat.shots:
+            # legacy single-prompt path: treat image_prompt as one shot
+            if beat.image_prompt:
+                beat.shots = [beat.image_prompt]
+            else:
+                continue
+        rendered: list[str] = []
+        for j, prompt in enumerate(beat.shots):
+            dest = ep.images_dir / f"{beat.id}_s{j + 1}.png"
+            if dest.exists() and not force and not stale_provider:
+                print(f"  {beat.id}.shot{j + 1}  skip (exists)")
+                rendered.append(f"images/{beat.id}_s{j + 1}.png")
+                continue
+            if dest.exists() and (force or stale_provider):
+                print(f"  {beat.id}.shot{j + 1}  re-render ({('forced' if force else 'workflow changed')})")
             # A forced re-render must NOT reuse the deterministic cache seed, or
             # ComfyUI's execution cache would serve the previous render for this
             # (graph + seed) pair instead of actually recomputing. Use a fresh
             # random seed so the cache can never hit.
-            import random
             s = random.randint(1, 2_147_483_646)
-        print(f"  {beat.id}  rendering (seed {s}) …")
-        # ComfyUI is run by the user (COMFY_AUTO_LAUNCH=False): one long-lived
-        # server on :8188, never relaunched between beats (relaunching can poison
-        # the Apple-Silicon MPS pool). We just queue the job and wait for the save
-        # node's file to land on disk. If a connection drops we retry against the
-        # SAME server rather than killing it.
-        max_attempts = 4
-        for attempt in range(1, max_attempts + 1):
-            if not comfy.is_up():
-                comfy.ensure_server()
-            try:
-                comfy.generate(
-                    positive=beat.image_prompt,
-                    negative=NEG,
-                    seed=s,
-                    dest=dest,
-                    workflow=workflow,
-                    width=w,
-                    height=h,
-                    steps=steps,
-                    cfg=cfg,
-                )
-            except (comfy.ComfyServerDied, SystemExit) as e:
-                print(f"    attempt {attempt} failed ({e}); retrying on same server")
-            if dest.exists() and dest.stat().st_size > 0:
-                break
-        if not (dest.exists() and dest.stat().st_size > 0):
-            raise SystemExit(f"image stage failed for {beat.id} after {max_attempts} attempts")
-        beat.image = f"images/{beat.id}.png"
-        print(f"  {beat.id}  -> {dest.name}")
+            print(f"  {beat.id}.shot{j + 1}  rendering (seed {s}) …")
+            # ComfyUI is run by the user (COMFY_AUTO_LAUNCH=False): one long-lived
+            # server on :8188, never relaunched between beats (relaunching can poison
+            # the Apple-Silicon MPS pool). We just queue the job and wait for the save
+            # node's file to land on disk. If a connection drops we retry against the
+            # SAME server rather than killing it.
+            max_attempts = 4
+            for attempt in range(1, max_attempts + 1):
+                if not comfy.is_up():
+                    comfy.ensure_server()
+                try:
+                    comfy.generate(
+                        positive=prompt,
+                        negative=NEG,
+                        seed=s,
+                        dest=dest,
+                        workflow=workflow,
+                        width=w,
+                        height=h,
+                        steps=steps,
+                        cfg=cfg,
+                    )
+                except (comfy.ComfyServerDied, SystemExit) as e:
+                    print(f"    attempt {attempt} failed ({e}); retrying on same server")
+                if dest.exists() and dest.stat().st_size > 0:
+                    break
+            if not (dest.exists() and dest.stat().st_size > 0):
+                raise SystemExit(f"image stage failed for {beat.id}.shot{j + 1} after {max_attempts} attempts")
+            rendered.append(f"images/{beat.id}_s{j + 1}.png")
+            print(f"  {beat.id}.shot{j + 1}  -> {dest.name}")
+        beat.images = rendered
+        beat.image = rendered[0] if rendered else beat.image
 
     ep.image_workflow = workflow_name
     ep.save()
-    done = sum(1 for b in ep.beats if (ep.images_dir / f"{b.id}.png").exists())
-    print(f"[images] {done}/{len(ep.beats)} beats rendered")
+    done = sum(1 for b in ep.beats if b.images and (ep.images_dir / b.images[0]).exists())
+    total_shots = sum(len(b.all_images) for b in ep.beats)
+    print(f"[images] {done}/{len(ep.beats)} beats, {total_shots} shots rendered")
     return ep

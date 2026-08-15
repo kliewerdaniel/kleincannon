@@ -102,7 +102,38 @@ class LearnConfig:
     bandit_epsilon_min: float = 0.05       # floor as confidence grows
     bandit_epsilon_decay: float = 0.97    # per-experience decay (slower = more exploring)
     bandit_min_confidence: float = 0.5     # below this, lean exploration
-    bandit_feature_version: int = 1        # bump to invalidate old model weights
+    bandit_feature_version: int = 3        # bump to invalidate old model weights
+                                                # v1: base features
+                                                # v2: + per-style one-hot + video_speed
+                                                # v3: + channel + asset_type one-hots (P2)
+
+    # ---- P2: acquisition / closed-deal objective ----
+    # Two-layer reward blend (dense engagement prior + sparse conversion truth).
+    # W_eng decays, W_conv grows, as attributed deals accumulate. Everything is
+    # config — no magic numbers in the optimizer.
+    reward_blend: dict[str, Any] = field(default_factory=lambda: {
+        "W_eng_initial": 1.0,       # engagement weight before any deals
+        "W_conv_max": 1.0,          # ceiling for conversion weight
+        "min_attributed_deals": 8,  # N where W_eng has decayed to floor
+        "decay": 0.85,              # per-deal W_conv approach rate
+    })
+    # Multi-touch attribution for closed deals.
+    attribution: dict[str, Any] = field(default_factory=lambda: {
+        "method": "time_decay",     # time_decay | last_touch | manual
+        "half_life_days": 14.0,     # τ for the exponential time-decay credit
+        "confidence_floor": 0.3,    # below this, a deal's credit is scaled to 0
+    })
+    # Obladaet-prior: seed the bandit's feature θ toward offer-relevant content
+    # until real deals teach otherwise. Anti-overfit, decision-aware.
+    obladaet_prior: dict[str, Any] = field(default_factory=lambda: {
+        "enabled": True,
+        "strength": 0.1,            # regularization prior magnitude
+        "kb_root": "knowledge",     # corpus dir under the project root
+    })
+    # Funnel stages (tracked for dashboards; NOT the optimizer objective).
+    funnel_stages: list[str] = field(default_factory=lambda: [
+        "impression", "engagement", "lead", "call_booked", "closed",
+    ])
 
     # ---- candidate optimization ----
     candidate_count: int = 20             # generate N, publish the top-1

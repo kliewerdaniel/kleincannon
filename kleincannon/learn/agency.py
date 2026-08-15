@@ -177,6 +177,33 @@ def pending_packages() -> list[dict[str, Any]]:
 # ---------------------------------------------------------------------------
 # Manual metrics recording (the agent reads them from the account, you run this)
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# P2 — closed-deal recording (the sparse, true objective)
+# ---------------------------------------------------------------------------
+def record_deal(*, deal_id: str, value: float, offer: str = "",
+                touchpoints: list[dict] | None = None,
+                attributed_experience_ids: list[str] | None = None,
+                attribution_method: str | None = None,
+                confidence: float = 1.0, source_ref: str = "") -> dict[str, Any]:
+    """Record a closed deal and attribute its value back to contributing assets.
+
+    This is the entry point the web/CLI call when a deal closes. It persists the
+    deal (with provenance via `source_ref`) and credits attributed value to the
+    experiences that earned it. Returns a summary for the dashboard.
+
+    Fail-closed: never fabricates a deal; credits only land on real experiences.
+    """
+    from . import attribution as attr
+    res = attr.record_deal(
+        deal_id=deal_id, value=value, offer=offer, touchpoints=touchpoints,
+        attributed_experience_ids=attributed_experience_ids,
+        attribution_method=attribution_method, confidence=confidence,
+        source_ref=source_ref)
+    # the next retrain will fold the new attributed value into the objective
+    tr.maybe_retrain()
+    return res
+
+
 def record_metrics(experience_id: str, metrics: dict[str, float],
                    *, mark_uploaded: bool = True,
                    video_id: str | None = None) -> dict[str, Any]:
@@ -199,7 +226,12 @@ def record_metrics(experience_id: str, metrics: dict[str, float],
                              captured_at=now, metrics=m)
     added = store.add_snapshot(snap)
     r = reward.score(m)
-    updates: dict[str, Any] = {"reward": round(r, 5)}
+    # P2: store the blended objective (engagement prior + any attributed deal
+    # value already credited to this experience) so the bandit trains on the
+    # true north-star once deals exist, and falls back to engagement otherwise.
+    blended = reward.blended_reward(
+        m, deal_value=exp.attributed_value, deal_confidence=1.0)
+    updates: dict[str, Any] = {"reward": round(r, 5), "blended_reward": round(blended, 5)}
     if mark_uploaded:
         updates["upload_status"] = "uploaded"
         updates["posted_at"] = exp.posted_at or now

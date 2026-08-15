@@ -35,29 +35,39 @@ def _probe_image_size(ep: Episode) -> tuple[int, int]:
     return config.GEN_WIDTH, config.GEN_HEIGHT
 
 
-def _kenburns(beat, w: int, h: int, beat_frames: float) -> str:
-    """Continuous Ken Burns for one beat.
+def _kenburns_type(motion: str, w: int, h: int, beat_frames: float) -> str:
+    """Continuous Ken Burns for one segment.
 
-    Motion spans the WHOLE beat duration (no static hold), so there is never a
-    frozen frame. Beats alternate push-in / push-out so a cut lands on a moving
-    frame at a different zoom — keeping motion continuous across the edit.
+    Motion spans the WHOLE segment duration (no static hold), so there is never
+    a frozen frame. Segments alternate push-in / push-out so a cut lands on a
+    moving frame at a different zoom — keeping motion continuous across the edit.
     """
     n = max(KENBURN_FRAMES, int(round(beat_frames)))
     z = config.ZOOM_MAX
-    if beat.motion == "out":
+    # Progress 0..1 across the segment, clamped so the last frame is still in range.
+    p = f"min(1,(on-1)/{n})"
+    if motion == "out":
         # start zoomed in (z), ease back out to 1.0 by the end
-        zp = f"min({z},max(1.0,(1.0+({z}-1.0)*(1-(on-1)/{n}))))"
+        zp = f"min({z},max(1.0,(1.0+({z}-1.0)*(1-{p}))))"
         x_expr, y_expr = "iw/2-(iw/zoom/2)", "ih/2-(ih/zoom/2)"
-    elif beat.motion == "left":
-        x_expr = f"iw/zoom*((on-1)/{n})"
+    elif motion in ("left", "right"):
+        # The visible crop is iw/zoom wide, so the ONLY travel available is
+        # (iw - iw/zoom). Panning by iw/zoom (the old expression) overshoots by
+        # ~7x: ffmpeg clamps x at the edge a fraction into the segment and the
+        # shot sits frozen for the rest of it. Travel the real range, and drift
+        # the zoom slightly so the frame keeps moving even at the edges.
+        zp = f"min({z},max(1.0,1.0+({z}-1.0)*(0.15+0.85*{p})))"
+        travel = f"(iw-iw/zoom)*{p}" if motion == "left" else f"(iw-iw/zoom)*(1-{p})"
+        x_expr = travel
         y_expr = "ih/2-(ih/zoom/2)"
-        zp = str(z)
-    elif beat.motion == "right":
-        x_expr = f"iw/zoom*(1-(on-1)/{n})"
-        y_expr = "ih/2-(ih/zoom/2)"
-        zp = str(z)
-    else:  # "in" — slow continuous push-in across the whole beat
-        zp = f"min({z},max(1.0,1.0+({z}-1.0)*((on-1)/{n})))"
+    else:  # "in" — slow continuous push-in across the whole segment
+        # Start already slightly zoomed (floor 1.03) and ease in on a sine
+        # curve so frame 0 is *moving*: a z=1.0 dead start makes the first
+        # ~2s of every beat a truly identical frame (ffmpeg freezedetect
+        # flags it, and the eye reads it as a stall). The sine ease peaks
+        # motion early, then settles into the push — a natural Ken Burns
+        # that never sits still.
+        zp = f"min({z},max(1.0,1.03+(({z})-1.03)*sin({p}*3.141592653589793/2)))"
         x_expr, y_expr = "iw/2-(iw/zoom/2)", "ih/2-(ih/zoom/2)"
 
     return (
@@ -72,12 +82,30 @@ def _build_command(ep: Episode) -> list[str]:
     total = ep.total_duration
     cmd = [config.FFMPEG, "-y", "-hide_banner"]
 
-    # Inputs: one looping image + the audio.
-    img_inputs: list[Path] = []
+    # Flatten beats x shots into an ordered list of (image_rel, dur) segments.
+    # Each beat's audio window is split evenly across its shots so a beat that
+    # carries 2 images shows each for roughly half its spoken duration. This
+    # keeps a longer video from sitting on one still for 8+ seconds.
+    segments: list[tuple[str, float, str]] = []  # (img_rel, dur, motion)
     for b in ep.beats:
-        if b.image:
-            img_inputs.append(ep.dir / b.image)
+        imgs = b.all_images
+        if not imgs or b.duration <= 0:
+            # no audio timing yet: give each shot a nominal second so the
+            # concat still has something to show.
+            for img in imgs:
+                segments.append((img, max(0.5, 2.0 / len(imgs)), b.motion))
+            continue
+        per = b.duration / max(1, len(imgs))
+        for k, img in enumerate(imgs):
+            # alternate motion across shots for continuous cross-cut movement
+            motion = b.motion if k % 2 == 0 else ("out" if b.motion == "in" else "in")
+            segments.append((img, per, motion))
+
     voice = ep.dir / ep.voice_audio if ep.voice_audio else None
+
+    img_inputs: list[Path] = []
+    for img_rel, _, _ in segments:
+        img_inputs.append(ep.dir / img_rel)
 
     for p in img_inputs:
         cmd += ["-loop", "1", "-i", str(p)]
@@ -86,18 +114,16 @@ def _build_command(ep: Episode) -> list[str]:
 
     # Build a [v0]...[vN] chain of kenburns'd, time-scaled stills.
     filters = []
-    for i, b in enumerate(ep.beats):
-        if not b.image:
-            continue
-        dur = max(0.5, b.duration)
+    for i, (img_rel, dur, motion) in enumerate(segments):
+        dur = max(0.5, dur)
         beat_frames = dur * config.FPS
-        kb = _kenburns(b, w, h, beat_frames)
+        kb = _kenburns_type(motion, w, h, beat_frames)
         filters.append(
             f"[{i}:v]trim=duration={dur:.3f},setpts=PTS-STARTPTS,"
             f"fps={config.FPS},{kb},format=yuv420p[v{i}]"
         )
-    vcat = "".join(f"[v{i}]" for i, b in enumerate(ep.beats) if b.image)
-    filters.append(f"{vcat}concat=n={len(img_inputs)}:v=1:a=0[vcat]")
+    vcat = "".join(f"[v{i}]" for i in range(len(segments)))
+    filters.append(f"{vcat}concat=n={len(segments)}:v=1:a=0[vcat]")
 
     # Caption overlay — single caption-layer video (one transparent PNG per
     # frame, karaoke-highlighted), composited with ONE overlay filter. This
@@ -163,7 +189,7 @@ def run(episode_id: str) -> Episode:
         print("[assemble] caption frames stale — re-rendering captions …")
         captions_stage.run(episode_id)
         ep = Episode.load(episode_id)
-    missing = [b.id for b in ep.beats if not (b.image and (ep.dir / b.image).exists())]
+    missing = [b.id for b in ep.beats if not b.all_images or not all((ep.dir / im).exists() for im in b.all_images)]
     if missing:
         raise SystemExit(f"missing images for beats {missing} — run images first")
     if not ep.voice_audio or not (ep.dir / ep.voice_audio).exists():

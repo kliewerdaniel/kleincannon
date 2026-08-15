@@ -112,6 +112,38 @@ class ContextualBandit:
         self.theta = self.A_inv @ self.b
         self.n_updates += 1
 
+    # ---- P2: Obladaet-prior hook (anti-overfit, decision-aware) ----
+    def seed_prior(self, feature_bias: dict[str, float], strength: float = 0.1) -> None:
+        """Nudge the bandit's θ toward offer-relevant feature directions.
+
+        This is a Bayesian-style *prior*, not a fabricated label: it biases
+        exploration toward on-brand assets until real deals teach otherwise.
+        Implementation keeps A/b/theta consistent — we add a pseudo-observation
+        of the prior target so predict()/A_inv stay valid (same ridge math).
+        """
+        if not feature_bias:
+            return
+        idx = {name: i for i, name in enumerate(self.feature_names_)}
+        # Build a target vector matching theta's scale and a small prior weight.
+        target = np.zeros(self.dim, dtype=float)
+        for name, bias in feature_bias.items():
+            if name in idx:
+                target[idx[name]] = float(bias)
+        if not np.any(target):
+            return
+        # A tiny ridge pseudo-observation: x = unit, reward = strength * target.
+        # This shifts theta toward target without destabilising the inverse.
+        x = np.ones(self.dim, dtype=float)
+        r = float(strength)
+        Ax = self.A @ x
+        denom = 1.0 + float(x @ self.A_inv @ x)
+        self.A_inv = self.A_inv - np.outer(self.A_inv @ x, x @ self.A_inv) / denom
+        self.A = self.A + np.outer(x, x)
+        self.b = self.b + (r * target)
+        # keep A_inv/b/theta consistent: re-solve theta from the (now larger) b
+        self.A_inv = np.linalg.inv(self.A)
+        self.theta = self.A_inv @ self.b
+
     # ---- persistence ----
     def save(self, path: str) -> None:
         np.savez(path, A=self.A, A_inv=self.A_inv, b=self.b, theta=self.theta,

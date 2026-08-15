@@ -46,6 +46,10 @@ class Experience:
     parent_id: Optional[str] = None    # lineage
     variation: str = ""                # mutation type applied
     archived_path: Optional[str] = None
+    channel: str = "tiktok"           # P2: acquisition channel
+    asset_type: str = "short_video"   # P2: short_video|post|article|repo_readme
+    blended_reward: float = 0.0       # P2: engagement+conversion objective
+    attributed_value: float = 0.0      # P2: attributed deal value (for dashboards)
     created_at: float = field(default_factory=time.time)
 
     def to_dict(self) -> dict:
@@ -63,6 +67,9 @@ class Experience:
             reward=row.get("reward", 0.0), reward_preset=row.get("reward_preset", ""),
             chosen=bool(row.get("chosen", 0)), parent_id=row.get("parent_id"),
             variation=row.get("variation", ""), archived_path=row.get("archived_path"),
+            channel=row.get("channel", "tiktok"), asset_type=row.get("asset_type", "short_video"),
+            blended_reward=row.get("blended_reward", 0.0),
+            attributed_value=row.get("attributed_value", 0.0),
             created_at=row.get("created_at", time.time()),
         )
 
@@ -130,6 +137,33 @@ class ExperienceDB:
         CREATE INDEX IF NOT EXISTS idx_snap_exp ON metric_snapshots(experience_id);
         CREATE INDEX IF NOT EXISTS idx_exp_posted ON experiences(posted_at);
         """)
+
+        # P2: broaden the experience unit (multi-channel acquisition loop).
+        for col, ddl in [
+            ("channel", "TEXT DEFAULT 'tiktok'"),
+            ("asset_type", "TEXT DEFAULT 'short_video'"),
+            ("blended_reward", "REAL DEFAULT 0.0"),
+            ("attributed_value", "REAL DEFAULT 0.0"),
+        ]:
+            try:
+                self.conn.execute(f"ALTER TABLE experiences ADD COLUMN {col} {ddl}")
+            except sqlite3.OperationalError:
+                pass  # already exists (idempotent migration)
+
+        # P2: closed-deal conversions (the sparse, true objective).
+        self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS conversions ("
+            " deal_id TEXT PRIMARY KEY, closed_at REAL, value REAL, offer TEXT,"
+            " touchpoints TEXT, attributed_experience_ids TEXT,"
+            " attribution_method TEXT, confidence REAL, source_ref TEXT)")
+
+        # P2: funnel telemetry (append-only, diagnostic only — not the objective).
+        self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS funnel_events ("
+            " id INTEGER PRIMARY KEY AUTOINCREMENT, experience_id TEXT,"
+            " channel TEXT, stage TEXT, at REAL, deal_id TEXT)")
+        self.conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_funnel_exp ON funnel_events(experience_id)")
         self.conn.commit()
 
     # ---- experiences ----
@@ -140,13 +174,15 @@ class ExperienceDB:
             """INSERT OR REPLACE INTO experiences
                (id, episode_id, platform, poster_account, niche, video_id,
                 upload_status, posted_at, generation_params, upload_info, reward,
-                reward_preset, chosen, parent_id, variation, archived_path, created_at)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                reward_preset, chosen, parent_id, variation, archived_path,
+                channel, asset_type, blended_reward, attributed_value, created_at)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (exp.id, exp.episode_id, exp.platform, exp.poster_account, exp.niche,
              exp.video_id, exp.upload_status, exp.posted_at,
              json.dumps(exp.generation_params), json.dumps(exp.upload_info),
              exp.reward, exp.reward_preset, int(exp.chosen), exp.parent_id,
-             exp.variation, exp.archived_path, exp.created_at),
+             exp.variation, exp.archived_path, exp.channel, exp.asset_type,
+             exp.blended_reward, exp.attributed_value, exp.created_at),
         )
         self.conn.commit()
         return exp
@@ -299,6 +335,70 @@ class ExperienceDB:
             d["validation_metrics"] = json.loads(d["validation_metrics"])
             out.append(d)
         return out
+
+    # ---- P2: conversions (closed-deal attribution) ----
+    def conversion_count(self) -> int:
+        return int(self.conn.execute(
+            "SELECT COUNT(*) FROM conversions").fetchone()[0])
+
+    def add_conversion(self, *, deal_id: str, value: float, offer: str = "",
+                       touchpoints: list[dict] | None = None,
+                       attributed_experience_ids: list[str] | None = None,
+                       attribution_method: str = "time_decay",
+                       confidence: float = 1.0, source_ref: str = "") -> str:
+        self.conn.execute(
+            "INSERT OR REPLACE INTO conversions "
+            "(deal_id, closed_at, value, offer, touchpoints, "
+            "attributed_experience_ids, attribution_method, confidence, source_ref) "
+            "VALUES (?,?,?,?,?,?,?,?,?)",
+            (deal_id, time.time(), float(value), offer,
+             json.dumps(touchpoints or []),
+             json.dumps(attributed_experience_ids or []),
+             attribution_method, float(confidence), source_ref))
+        self.conn.commit()
+        return deal_id
+
+    def get_conversion(self, deal_id: str) -> Optional[dict]:
+        row = self.conn.execute(
+            "SELECT * FROM conversions WHERE deal_id=?", (deal_id,)).fetchone()
+        return self._conv_row(row) if row else None
+
+    def list_conversions(self, limit: int = 100) -> list[dict]:
+        rows = self.conn.execute(
+            "SELECT * FROM conversions ORDER BY closed_at DESC LIMIT ?",
+            (limit,)).fetchall()
+        return [self._conv_row(r) for r in rows]
+
+    def _conv_row(self, row) -> dict:
+        d = dict(row)
+        d["touchpoints"] = json.loads(d.get("touchpoints") or "[]")
+        d["attributed_experience_ids"] = json.loads(
+            d.get("attributed_experience_ids") or "[]")
+        return d
+
+    # ---- P2: funnel telemetry (append-only, diagnostic) ----
+    def add_funnel_event(self, experience_id: str, stage: str,
+                         channel: str = "", deal_id: str | None = None) -> None:
+        if stage not in learn_config.funnel_stages:
+            # tolerate unknown stages but still record them
+            pass
+        self.conn.execute(
+            "INSERT INTO funnel_events (experience_id, channel, stage, at, deal_id) "
+            "VALUES (?,?,?,?,?)",
+            (experience_id, channel, stage, time.time(), deal_id))
+        self.conn.commit()
+
+    def list_funnel_events(self, experience_id: str | None = None,
+                           limit: int = 500) -> list[dict]:
+        if experience_id:
+            rows = self.conn.execute(
+                "SELECT * FROM funnel_events WHERE experience_id=? "
+                "ORDER BY at LIMIT ?", (experience_id, limit)).fetchall()
+        else:
+            rows = self.conn.execute(
+                "SELECT * FROM funnel_events ORDER BY at DESC LIMIT ?",
+                (limit,)).fetchall()
+        return [dict(r) for r in rows]
 
     def close(self) -> None:
         self.conn.close()
